@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    container_name: workmatch-db
+    environment:
+      POSTGRES_DB: workmatch
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - workmatch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d workmatch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: workmatch-backend
+    environment:
+      SERVER_PORT: 8081
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/workmatch
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 1234
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - db
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./backend:/app    # SINCRONIZA CÓDIGO
+      - ~/.m2:/root/.m2   # CACHE
+    networks:
+      - workmatch-net
+
+
+
+  auth-serve:
+    build:
+      context: ./auth-serve
+      dockerfile: Dockerfile.dev
+    container_name: workmatch-auth-serve
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/workmatch
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 1234
+    depends_on:
+      - db
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./auth-serve:/app
+      - ~/.m2:/root/.m2
+    networks:
+      - workmatch-net
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: workmatch-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - REACT_APP_API_URL=http://backend:8081
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - workmatch-net
+
+volumes:
+  db_data:
+
+networks:
+  workmatch-net:
+    driver: bridge
