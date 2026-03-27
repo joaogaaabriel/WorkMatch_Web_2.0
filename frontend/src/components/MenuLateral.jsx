@@ -1,341 +1,246 @@
+/**
+ * WorkMatch 2.0 — MenuLateral
+ * BUG CORRIGIDO: logout limpa AuthContext | menu filtrado por role
+ */
 import React, { useState } from "react";
-import { 
-  Box, 
-  IconButton, 
-  Drawer, 
-  Typography, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  Divider,
-  ListItemIcon,
-  Avatar
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import { useNavigate } from "react-router-dom";
-import logo from "../assets/Logo.png";
-import HomeIcon from "@mui/icons-material/Home";
-import PersonIcon from "@mui/icons-material/Person";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
-import SettingsIcon from "@mui/icons-material/Settings";
-import SupportIcon from "@mui/icons-material/Support";
-import LogoutIcon from "@mui/icons-material/Logout";
-import DashboardIcon from "@mui/icons-material/Dashboard";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
+const NAV_CLIENTE = [
+  { label: "Início",            path: "/home",               emoji: "🏠" },
+  { label: "Meus Agendamentos", path: "/meus-agendamentos",  emoji: "📅" },
+  { label: "Meu Perfil",        path: "/perfil",             emoji: "👤" },
+  { label: "Suporte",           path: "/suporte",            emoji: "💬" },
+];
+
+const NAV_ADMIN = [
+  { label: "Início",                path: "/home",                    emoji: "🏠" },
+  { label: "Gerenciar Profissionais", path: "/gerenciar-profissionais", emoji: "👷" },
+];
 
 export default function MenuLateral() {
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const location = useLocation();
+  const { user, logout } = useAuth();
 
-  const toggleDrawer = (open) => setDrawerOpen(open);
+  const navItems = user?.role === "ADMIN" ? NAV_ADMIN : NAV_CLIENTE;
+  const nomeInicial = user?.nome ? user.nome.charAt(0).toUpperCase() : "U";
 
-  const menuItems = [
-    { text: "Home", icon: <HomeIcon />, path: "/home" },
-    { text: "Meu Perfil", icon: <PersonIcon />, path: "/perfil" },
-    { text: "Meus Agendamentos", icon: <EventAvailableIcon />, path: "/meus-agendamentos" },
-    { text: "Gerenciar Profissionais", icon: <ManageAccountsIcon />, path: "/gerenciar-profissionais" },
-    { text: "Configurações", icon: <SettingsIcon />, path: "/configuracoes" },
-    { text: "Suporte", icon: <SupportIcon />, path: "/suporte" },
-  ];
+  function handleLogout() {
+    logout();
+    navigate("/login");
+    setOpen(false);
+  }
+
+  function handleNav(path) {
+    navigate(path);
+    setOpen(false);
+  }
 
   return (
     <>
-      {/* BOTÃO DO MENU - ESTILO ATUALIZADO */}
-      <Box
-        sx={{
+      {/* ── Botão hambúrguer ── */}
+      <button
+        onClick={() => setOpen(true)}
+        aria-label="Abrir menu"
+        style={{
           position: "fixed",
-          top: 20,
-          left: 20,
-          zIndex: 20,
-          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
-          backdropFilter: "blur(10px)",
-          borderRadius: "12px",
-          border: "1px solid rgba(226, 232, 240, 0.8)",
-          boxShadow: "0 8px 25px rgba(59, 130, 246, 0.15)",
-          "&:hover": {
-            boxShadow: "0 12px 30px rgba(59, 130, 246, 0.25)",
-            transform: "scale(1.05)",
-          },
-          transition: "all 0.3s ease",
-        }}
-      >
-        <IconButton 
-          onClick={() => toggleDrawer(true)}
-          sx={{
-            p: 1.5,
-            "&:hover": {
-              background: "rgba(59, 130, 246, 0.1)",
-            },
-          }}
-        >
-          <MenuIcon sx={{ 
-            fontSize: 32, 
-            color: "#3b82f6",
-            filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.1))"
-          }} />
-        </IconButton>
-      </Box>
-
-      {/* LOGO - ESTILO ATUALIZADO */}
-      <Box
-        component="img"
-        src={logo}
-        alt="WorkMatch Logo"
-        onClick={() => navigate("/")}
-        sx={{
-          position: "fixed",
-          top: 20,
-          right: 20,
-          height: "45px",
+          top: 16,
+          left: 16,
+          zIndex: 200,
+          width: 52,
+          height: 52,
+          borderRadius: 14,
+          border: "1.5px solid var(--clr-border)",
+          background: "var(--clr-surface)",
+          boxShadow: "var(--shadow-md)",
           cursor: "pointer",
-          zIndex: 20,
-          transition: "all 0.3s ease",
-          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
-          backdropFilter: "blur(10px)",
-          borderRadius: "12px",
-          padding: "8px 12px",
-          border: "1px solid rgba(226, 232, 240, 0.8)",
-          boxShadow: "0 8px 25px rgba(59, 130, 246, 0.15)",
-          "&:hover": {
-            transform: "scale(1.05) translateY(-2px)",
-            boxShadow: "0 12px 30px rgba(59, 130, 246, 0.25)",
-          },
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 5,
+          transition: "box-shadow .2s",
         }}
-      />
-
-      {/* MENU LATERAL - ESTILO ATUALIZADO */}
-      <Drawer 
-        anchor="left" 
-        open={drawerOpen} 
-        onClose={() => toggleDrawer(false)}
-        PaperProps={{
-          sx: {
-            width: 320,
-            background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-            borderRight: "1px solid rgba(226, 232, 240, 0.8)",
-            boxShadow: "20px 0 40px rgba(0, 0, 0, 0.1)",
-          }
-        }}
+        onMouseEnter={e => e.currentTarget.style.boxShadow = "var(--shadow-blue)"}
+        onMouseLeave={e => e.currentTarget.style.boxShadow = "var(--shadow-md)"}
       >
-        <Box sx={{ 
-          width: 320, 
-          height: "100%",
-          position: "relative",
-          overflow: "hidden",
+        {[0,1,2].map(i => (
+          <span key={i} style={{
+            display: "block",
+            width: 22,
+            height: 2.5,
+            background: "var(--clr-primary)",
+            borderRadius: 99,
+          }} />
+        ))}
+      </button>
+
+      {/* ── Overlay ── */}
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 300,
+            background: "rgba(15,23,42,0.45)",
+            backdropFilter: "blur(3px)",
+            animation: "fadeIn .2s ease",
+          }}
+        />
+      )}
+
+      {/* ── Drawer ── */}
+      <aside style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 400,
+        width: 300,
+        background: "var(--clr-surface)",
+        boxShadow: "var(--shadow-lg)",
+        display: "flex",
+        flexDirection: "column",
+        transform: open ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform .3s cubic-bezier(.4,0,.2,1)",
+        borderRight: "1px solid var(--clr-border)",
+      }}>
+
+        {/* Header do drawer */}
+        <div style={{
+          padding: "28px 24px 20px",
+          background: "var(--grad-hero)",
+          color: "#fff",
+          flexShrink: 0,
         }}>
-          {/* ELEMENTOS DECORATIVOS DO FUNDO */}
-          <Box
-            sx={{
+          {/* Fechar */}
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Fechar menu"
+            style={{
               position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              overflow: "hidden",
-              zIndex: 0,
+              top: 16,
+              right: 16,
+              background: "rgba(255,255,255,0.15)",
+              border: "none",
+              borderRadius: 10,
+              width: 36,
+              height: 36,
+              fontSize: 20,
+              color: "#fff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                width: "120px",
-                height: "120px",
-                background: "linear-gradient(135deg, #3b82f6, #10b981)",
-                borderRadius: "50%",
-                opacity: 0.08,
-                top: "-30px",
-                right: "-30px",
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                width: "80px",
-                height: "80px",
-                background: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
-                borderRadius: "50%",
-                opacity: 0.08,
-                bottom: "40px",
-                left: "-20px",
-              }}
-            />
-          </Box>
+          >×</button>
 
-          {/* CABEÇALHO DO MENU */}
-          <Box sx={{ 
-            p: 3, 
-            position: "relative",
-            zIndex: 1,
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)",
-            backdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-              <Avatar
-                sx={{
-                  width: 56,
-                  height: 56,
-                  background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
-                }}
-              >
-                <DashboardIcon sx={{ fontSize: 28, color: "white" }} />
-              </Avatar>
-              <Box>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 800,
-                    background: "linear-gradient(135deg, #1e293b 0%, #3b82f6 100%)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    color: "transparent",
-                    fontSize: "1.4rem",
-                    textShadow: "0px 1px 2px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  Menu Principal
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: "#64748b",
-                    fontSize: "0.85rem",
-                  }}
-                >
-                  Gerencie sua conta
-                </Typography>
-              </Box>
-            </Box>
-            <Divider 
-              sx={{ 
-                borderColor: "rgba(226, 232, 240, 0.8)",
-                "&::before, &::after": {
-                  borderColor: "rgba(226, 232, 240, 0.5)",
-                }
-              }} 
-            />
-          </Box>
-
-          {/* LISTA DE MENU COM BOTÃO SAIR MAIS ALTO */}
-          <Box sx={{ 
-            p: 2, 
-            position: "relative",
-            zIndex: 1,
-            height: "calc(100% - 140px)",
+          {/* Avatar + nome */}
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.2)",
+            border: "2px solid rgba(255,255,255,0.5)",
             display: "flex",
-            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 24,
+            fontWeight: 800,
+            marginBottom: 12,
           }}>
-            <List sx={{ flexGrow: 0 }}>
-              {/* CORRIGIDO: removido o parâmetro index não utilizado */}
-              {menuItems.map((item) => (
-                <ListItem 
-                  key={item.text}
-                  button 
-                  onClick={() => {
-                    navigate(item.path);
-                    toggleDrawer(false);
-                  }}
-                  sx={{
-                    borderRadius: "12px",
-                    mb: 1,
-                    py: 1.5,
-                    transition: "all 0.3s ease",
-                    background: "rgba(255, 255, 255, 0.7)",
-                    border: "1px solid rgba(226, 232, 240, 0.5)",
-                    "&:hover": {
-                      background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)",
-                      borderColor: "rgba(59, 130, 246, 0.3)",
-                      transform: "translateX(8px)",
-                      boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15)",
-                    },
-                    "& .MuiListItemIcon-root": {
-                      minWidth: 40,
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: "#3b82f6" }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
-                    primaryTypographyProps={{
-                      sx: {
-                        fontWeight: 600,
-                        color: "#1e293b",
-                        fontSize: "0.95rem",
-                      }
-                    }}
-                  />
-                </ListItem>
-              ))}
-            </List>
+            {nomeInicial}
+          </div>
 
-            {/* BOTÃO SAIR - AGORA MAIS ALTO */}
-            <Box sx={{ p: 2, mt: 2 }}>
-              <Divider sx={{ mb: 2, borderColor: "rgba(226, 232, 240, 0.8)" }} />
-              <ListItem 
-                button 
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  navigate("/login");
-                  toggleDrawer(false);
+          <p style={{ fontWeight: 700, fontSize: 18, marginBottom: 2 }}>
+            {user?.nome || "Usuário"}
+          </p>
+          <p style={{ fontSize: 13, opacity: 0.75, fontWeight: 500 }}>
+            {user?.role === "ADMIN" ? "Administrador" : "Cliente"}
+          </p>
+        </div>
+
+        {/* Nav links */}
+        <nav style={{ flex: 1, padding: "16px 16px 8px", overflowY: "auto" }}>
+          <p style={{
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--clr-subtle)",
+            padding: "8px 12px 6px",
+          }}>
+            Navegação
+          </p>
+
+          {navItems.map((item) => {
+            const active = location.pathname === item.path;
+            return (
+              <button
+                key={item.path}
+                onClick={() => handleNav(item.path)}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "14px 16px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: active ? "var(--clr-primary-bg)" : "transparent",
+                  color: active ? "var(--clr-primary)" : "var(--clr-text)",
+                  fontFamily: "var(--font-body)",
+                  fontSize: 16,
+                  fontWeight: active ? 700 : 600,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  marginBottom: 4,
+                  transition: "background .15s",
+                  borderLeft: active ? "3px solid var(--clr-primary)" : "3px solid transparent",
                 }}
-                sx={{
-                  borderRadius: "12px",
-                  py: 1.5,
-                  background: "rgba(255, 255, 255, 0.7)",
-                  border: "1px solid rgba(239, 68, 68, 0.2)",
-                  "&:hover": {
-                    background: "rgba(239, 68, 68, 0.1)",
-                    borderColor: "rgba(239, 68, 68, 0.4)",
-                    transform: "translateX(8px)",
-                  },
-                  transition: "all 0.3s ease",
-                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "#f8fafc"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "transparent"; }}
               >
-                <ListItemIcon sx={{ color: "#ef4444" }}>
-                  <LogoutIcon />
-                </ListItemIcon>
-                <ListItemText 
-                  primary="Sair" 
-                  primaryTypographyProps={{
-                    sx: {
-                      fontWeight: 600,
-                      color: "#ef4444",
-                    }
-                  }}
-                />
-              </ListItem>
-            </Box>
-          </Box>
+                <span style={{ fontSize: 20 }}>{item.emoji}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
 
-          {/* RODAPÉ DO MENU */}
-          <Box sx={{ 
-            p: 2, 
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1,
-            background: "rgba(255, 255, 255, 0.9)",
-            backdropFilter: "blur(10px)",
-            borderTop: "1px solid rgba(226, 232, 240, 0.8)",
-          }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: "#94a3b8",
-                textAlign: "center",
-                display: "block",
-                fontSize: "0.75rem",
-              }}
-            >
-              WorkMatch © 2024
-            </Typography>
-          </Box>
-        </Box>
-      </Drawer>
+        {/* Logout */}
+        <div style={{
+          padding: "16px",
+          borderTop: "1px solid var(--clr-border)",
+          flexShrink: 0,
+        }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              padding: "14px 16px",
+              borderRadius: 12,
+              border: "1.5px solid #fee2e2",
+              background: "#fff5f5",
+              color: "var(--clr-danger)",
+              fontFamily: "var(--font-body)",
+              fontSize: 16,
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "background .15s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "#fee2e2"}
+            onMouseLeave={e => e.currentTarget.style.background = "#fff5f5"}
+          >
+            <span style={{ fontSize: 20 }}>🚪</span>
+            Sair da conta
+          </button>
+        </div>
+      </aside>
     </>
   );
 }

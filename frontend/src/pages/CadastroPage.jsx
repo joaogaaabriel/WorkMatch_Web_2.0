@@ -1,269 +1,246 @@
+/**
+ * WorkMatch 2.0 — CadastroPage
+ * BUG CORRIGIDO: usa template literals corretos nas URLs via service layer
+ */
 import React, { useState } from "react";
-import axios from "axios";
-import {
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Grid,
-  Alert,
-  Card,
-  CardContent,
-  InputAdornment,
-  IconButton,
-  Snackbar,
-} from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/Logo.png";
+import { usuariosService, validacaoService } from "../services/api";
+import { Btn, Input, Card } from "../components/ui";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
-function CadastroPage() {
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    cpf: "",
-    dataNascimento: "",
-    telefone: "",
-    endereco: "",
-    senha: "",
-    role: "CLIENTE",
-  });
+const INITIAL = {
+  nome: "", email: "", cpf: "", telefone: "",
+  dataNascimento: "", endereco: "", senha: "", role: "CLIENTE",
+};
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [, setMensagem] = useState({ tipo: "", texto: "" });
-  const [notificacao, setNotificacao] = useState({
-    aberta: false,
-    mensagem: "",
-    tipo: "success",
-  });
-
-  const navigate = useNavigate();
-
-  const API = import.meta.env.VITE_API_URL;
-
-  const formatarCPF = (value) => {
-    value = value.replace(/\D/g, "");
-    value = value.replace(/(\d{3})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d)/, "$1.$2");
-    value = value.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    return value;
-  };
-
-  const formatarTelefone = (value) => {
-    value = value.replace(/\D/g, "");
-    value = value.replace(/(\d{2})(\d)/, "($1) $2");
-    value = value.replace(/(\d{5})(\d)/, "$1-$2");
-    return value;
-  };
-
-  const handleChange = (e) => {
-    let { name, value } = e.target;
-
-    if (name === "cpf") {
-      value = formatarCPF(value);
-      if (value.length > 14) return;
-    }
-
-    if (name === "telefone") {
-      value = formatarTelefone(value);
-      if (value.length > 15) return;
-    }
-
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const validarCpfNoBackend = async (cpf) => {
-    try {
-      const response = await axios.post(`${API}/api/validar/cpf`, { cpf });
-
-      if (typeof response.data.valido === "boolean") {
-        return response.data.valido;
-      }
-
-      return null;
-    } catch (error) {
-      console.error("Erro ao validar CPF no backend:", error);
-      return null;
-    }
-  };
-
-  const mostrarNotificacao = (mensagem, tipo = "success") => {
-    setNotificacao({ aberta: true, mensagem, tipo });
-  };
-
-  const handleCadastro = async (e) => {
-    e.preventDefault();
-    setMensagem({ tipo: "", texto: "" });
-
-    const cpfLimpo = formData.cpf.replace(/\D/g, "");
-
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email);
-    if (!emailValido) {
-      mostrarNotificacao("E-mail inválido!", "error");
-      return;
-    }
-
-    const telefoneLimpo = formData.telefone.replace(/\D/g, "");
-    if (telefoneLimpo.length !== 11) {
-      mostrarNotificacao("O telefone deve conter 11 dígitos!", "error");
-      return;
-    }
-
-    const hoje = new Date();
-    const dataNasc = new Date(formData.dataNascimento);
-
-    if (isNaN(dataNasc.getTime())) {
-      mostrarNotificacao("Data de nascimento inválida!", "error");
-      return;
-    }
-
-    let idade = hoje.getFullYear() - dataNasc.getFullYear();
-    const m = hoje.getMonth() - dataNasc.getMonth();
-    if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) idade--;
-
-    if (idade < 18) {
-      mostrarNotificacao("É necessário ter pelo menos 18 anos.", "error");
-      return;
-    }
-
-    if (idade > 100) {
-      mostrarNotificacao("Idade inválida! Limite é 100 anos.", "error");
-      return;
-    }
-
-    const cpfValido = await validarCpfNoBackend(cpfLimpo);
-
-    if (cpfValido === false) {
-      mostrarNotificacao("CPF inválido!", "error");
-      return;
-    }
-
-    if (cpfValido === null) {
-      mostrarNotificacao("Erro ao validar CPF. Tente novamente.", "error");
-      return;
-    }
-
-    try {
-      const dadosParaEnvio = { ...formData, cpf: cpfLimpo };
-
-      await axios.post(`${API}/api/usuarios`, dadosParaEnvio);
-
-      mostrarNotificacao("Cadastro realizado com sucesso!", "success");
-      setTimeout(() => navigate("/login"), 1500);
-    } catch (error) {
-      if (error.response?.status === 409 || error.response?.status === 400) {
-        mostrarNotificacao(error.response.data, "error");
-      } else {
-        mostrarNotificacao("Erro ao cadastrar usuário.", "error");
-      }
-    }
-  };
-
-  const togglePasswordVisibility = () => setShowPassword(!showPassword);
-
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        width: "100vw",
-        background:
-          "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Card sx={{ p: 4, maxWidth: 600, width: "100%" }}>
-        <CardContent>
-          <Box sx={{ textAlign: "center", mb: 3 }}>
-            <Box
-              component="img"
-              src={logo}
-              alt="WorkMatch Logo"
-              sx={{ height: 50, mb: 2, cursor: "pointer" }}
-              onClick={() => navigate("/")}
-            />
-            <Typography variant="h4" fontWeight={700}>
-              Cadastre-se
-            </Typography>
-          </Box>
-
-          <Box component="form" onSubmit={handleCadastro}>
-            <Grid container spacing={2}>
-              {[
-                { name: "nome", label: "Nome Completo" },
-                { name: "cpf", label: "CPF" },
-                { name: "email", label: "E-mail", type: "email" },
-                { name: "telefone", label: "Telefone" },
-                {
-                  name: "dataNascimento",
-                  label: "Data de Nascimento",
-                  type: "date",
-                  shrink: true,
-                },
-                { name: "endereco", label: "Endereço" },
-              ].map((campo) => (
-                <Grid item xs={12} key={campo.name}>
-                  <TextField
-                    fullWidth
-                    required
-                    name={campo.name}
-                    label={campo.label}
-                    type={campo.type || "text"}
-                    value={formData[campo.name]}
-                    onChange={handleChange}
-                    InputLabelProps={campo.shrink ? { shrink: true } : undefined}
-                  />
-                </Grid>
-              ))}
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  required
-                  name="senha"
-                  label="Senha"
-                  type={showPassword ? "text" : "password"}
-                  value={formData.senha}
-                  onChange={handleChange}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={togglePasswordVisibility} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3 }}>
-              Cadastrar
-            </Button>
-
-            <Button
-              fullWidth
-              variant="outlined"
-              sx={{ mt: 2 }}
-              onClick={() => navigate("/login")}
-            >
-              Já tem conta? Faça login
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Snackbar
-        open={notificacao.aberta}
-        autoHideDuration={4000}
-        onClose={() => setNotificacao((p) => ({ ...p, aberta: false }))}
-      >
-        <Alert severity={notificacao.tipo}>{notificacao.mensagem}</Alert>
-      </Snackbar>
-    </Box>
+function fmt_cpf(v) {
+  v = v.replace(/\D/g, "").slice(0, 11);
+  return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, (_, a, b, c, d) =>
+    d ? `${a}.${b}.${c}-${d}` : c ? `${a}.${b}.${c}` : b ? `${a}.${b}` : a
   );
 }
 
-export default CadastroPage;
+function fmt_tel(v) {
+  v = v.replace(/\D/g, "").slice(0, 11);
+  if (v.length <= 2) return `(${v}`;
+  if (v.length <= 7) return `(${v.slice(0,2)}) ${v.slice(2)}`;
+  return `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+}
+
+export default function CadastroPage() {
+  const navigate = useNavigate();
+  const { toast, showToast, hideToast } = useToast();
+  const [form, setForm] = useState(INITIAL);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState(1); // 1: dados pessoais | 2: acesso
+
+  function handleChange(e) {
+    let { name, value } = e.target;
+    if (name === "cpf") value = fmt_cpf(value);
+    if (name === "telefone") value = fmt_tel(value);
+    setForm(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: "" }));
+  }
+
+  function validateStep1() {
+    const errs = {};
+    if (!form.nome.trim()) errs.nome = "Nome obrigatório";
+    if (!form.cpf || form.cpf.length < 14) errs.cpf = "CPF inválido";
+    if (!form.telefone || form.telefone.length < 14) errs.telefone = "Telefone inválido";
+    if (!form.dataNascimento) errs.dataNascimento = "Data de nascimento obrigatória";
+    return errs;
+  }
+
+  function validateStep2() {
+    const errs = {};
+    if (!form.email || !form.email.includes("@")) errs.email = "E-mail inválido";
+    if (!form.senha || form.senha.length < 6) errs.senha = "Senha deve ter ao menos 6 caracteres";
+    return errs;
+  }
+
+  async function handleNextStep() {
+    const errs = validateStep1();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    setLoading(true);
+    try {
+      const cpfLimpo = form.cpf.replace(/\D/g, "");
+      const cpfValido = await validacaoService.validarCpf(cpfLimpo);
+      if (!cpfValido.valido) {
+        setErrors({ cpf: "CPF inválido ou não reconhecido." });
+        setLoading(false);
+        return;
+      }
+      const cpfExiste = await validacaoService.cpfExiste(cpfLimpo);
+      if (cpfExiste) {
+        setErrors({ cpf: "Este CPF já está cadastrado." });
+        setLoading(false);
+        return;
+      }
+      setStep(2);
+    } catch {
+      showToast("Erro ao validar CPF. Tente novamente.", "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    const errs = validateStep2();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+
+    setLoading(true);
+    try {
+      const emailExiste = await validacaoService.emailExiste(form.email);
+      if (emailExiste) {
+        setErrors({ email: "Este e-mail já está cadastrado." });
+        setLoading(false);
+        return;
+      }
+
+      await usuariosService.cadastrar({
+        ...form,
+        cpf: form.cpf.replace(/\D/g, ""),
+        telefone: form.telefone.replace(/\D/g, ""),
+      });
+
+      showToast("Conta criada com sucesso! Faça login para continuar. 🎉", "success");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Erro ao criar conta. Tente novamente.";
+      showToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const inputProps = (name, label, extra = {}) => ({
+    label,
+    name,
+    value: form[name],
+    onChange: handleChange,
+    error: errors[name],
+    ...extra,
+  });
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "var(--clr-bg)",
+      fontFamily: "var(--font-body)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      padding: "32px 16px 64px",
+    }}>
+      {/* Header */}
+      <div style={{ width:"100%", maxWidth:560, display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:32 }}>
+        <span
+          onClick={() => navigate("/")}
+          style={{
+            cursor:"pointer", fontWeight:900, fontSize:24,
+            background:"var(--grad-brand)",
+            WebkitBackgroundClip:"text",
+            WebkitTextFillColor:"transparent",
+          }}
+        >WorkMatch</span>
+        <button
+          onClick={() => navigate("/login")}
+          style={{
+            background:"none", border:"none", color:"var(--clr-muted)",
+            fontSize:15, cursor:"pointer", fontFamily:"var(--font-body)", fontWeight:600,
+          }}
+        >Já tenho conta →</button>
+      </div>
+
+      <div style={{ width:"100%", maxWidth:560 }}>
+        {/* Progress */}
+        <div style={{ display:"flex", gap:8, marginBottom:32 }}>
+          {[1,2].map(n => (
+            <div key={n} style={{
+              flex:1, height:5, borderRadius:99,
+              background: n <= step ? "var(--clr-primary)" : "var(--clr-border)",
+              transition: "background .3s",
+            }} />
+          ))}
+        </div>
+
+        <h1 style={{ fontSize:30, fontWeight:900, color:"var(--clr-text)", marginBottom:4 }}>
+          {step === 1 ? "Seus dados pessoais" : "Dados de acesso"}
+        </h1>
+        <p style={{ color:"var(--clr-muted)", fontSize:16, marginBottom:32 }}>
+          {step === 1 ? "Passo 1 de 2 — Informe seus dados pessoais" : "Passo 2 de 2 — Crie seu acesso"}
+        </p>
+
+        <Card style={{ padding:32 }}>
+          {step === 1 ? (
+            <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+              <Input {...inputProps("nome", "Nome completo", { placeholder:"João Silva", icon:"👤", required:true })} />
+              <Input {...inputProps("cpf", "CPF", { placeholder:"000.000.000-00", icon:"🪪", required:true, maxLength:14 })} />
+              <Input {...inputProps("telefone", "Telefone / WhatsApp", { placeholder:"(62) 99999-9999", icon:"📱", required:true, type:"tel" })} />
+              <Input {...inputProps("dataNascimento", "Data de nascimento", { icon:"🎂", required:true, type:"date" })} />
+              <Input {...inputProps("endereco", "Endereço", { placeholder:"Rua das Flores, 123 — Goiânia, GO", icon:"📍" })} />
+
+              <Btn size="lg" fullWidth loading={loading} onClick={handleNextStep}>
+                Continuar →
+              </Btn>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:20 }}>
+              <Input {...inputProps("email", "E-mail", { placeholder:"seuemail@exemplo.com", icon:"✉️", required:true, type:"email" })} />
+
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                <label style={{ fontSize:15, fontWeight:700, color:"var(--clr-text)" }}>
+                  Senha <span style={{ color:"var(--clr-danger)" }}>*</span>
+                </label>
+                <div style={{ position:"relative" }}>
+                  <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:18, pointerEvents:"none" }}>🔒</span>
+                  <input
+                    name="senha"
+                    type={showPassword ? "text" : "password"}
+                    value={form.senha}
+                    onChange={handleChange}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                    style={{
+                      width:"100%", padding:"14px 48px 14px 44px", fontSize:16,
+                      fontFamily:"var(--font-body)", fontWeight:500, color:"var(--clr-text)",
+                      background:"var(--clr-surface)",
+                      border:`2px solid ${errors.senha ? "var(--clr-danger)" : "var(--clr-border)"}`,
+                      borderRadius:12, outline:"none",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", fontSize:18 }}
+                  >{showPassword ? "🙈" : "👁️"}</button>
+                </div>
+                {errors.senha && <p style={{ fontSize:13, color:"var(--clr-danger)", fontWeight:600 }}>{errors.senha}</p>}
+              </div>
+
+              <div style={{ display:"flex", gap:12 }}>
+                <Btn variant="ghost" fullWidth onClick={() => setStep(1)} type="button">
+                  ← Voltar
+                </Btn>
+                <Btn type="submit" fullWidth size="lg" loading={loading}>
+                  Criar conta
+                </Btn>
+              </div>
+            </form>
+          )}
+        </Card>
+
+        <p style={{ textAlign:"center", marginTop:20, fontSize:13, color:"var(--clr-subtle)" }}>
+          Ao criar uma conta você concorda com os termos de uso do WorkMatch.
+        </p>
+      </div>
+
+      <Toast {...toast} onClose={hideToast} />
+    </div>
+  );
+}

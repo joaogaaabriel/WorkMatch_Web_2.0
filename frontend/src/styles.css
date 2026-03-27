@@ -1,0 +1,114 @@
+/* ============================================================
+   WorkMatch 2.0 — Global Styles & Design Tokens
+   Público: 40–70 anos | Legibilidade alta | Botões grandes
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  /* Brand Colors */
+  --clr-primary:     #1e40af;   /* azul escuro principal */
+  --clr-primary-lt:  #3b82f6;   /* azul médio */
+  --clr-primary-bg:  #eff6ff;   /* fundo azul suave */
+  --clr-accent:      #f59e0b;   /* amarelo destaque */
+  --clr-accent-dk:   #d97706;
+  --clr-teal:        #0d9488;
+  --clr-purple:      #6d28d9;
+
+  /* Neutrals */
+  --clr-bg:          #f8fafc;
+  --clr-surface:     #ffffff;
+  --clr-border:      #e2e8f0;
+  --clr-text:        #1e293b;
+  --clr-muted:       #64748b;
+  --clr-subtle:      #94a3b8;
+
+  /* Status */
+  --clr-success:     #059669;
+  --clr-danger:      #dc2626;
+  --clr-warning:     #d97706;
+
+  /* Gradients */
+  --grad-brand:      linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0d9488 100%);
+  --grad-card:       linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  --grad-hero:       linear-gradient(160deg, #1e3a8a 0%, #1e40af 40%, #0d9488 100%);
+
+  /* Shadows */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg:   0 10px 32px rgba(0,0,0,0.12);
+  --shadow-blue: 0 8px 24px rgba(30,64,175,0.25);
+
+  /* Radius */
+  --r-sm:  8px;
+  --r-md:  14px;
+  --r-lg:  20px;
+  --r-xl:  28px;
+
+  /* Spacing */
+  --header-h: 72px;
+  --sidebar-w: 280px;
+
+  /* Typography */
+  --font-body: 'Nunito', sans-serif;
+  --font-display: 'DM Serif Display', serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--clr-bg); }
+::-webkit-scrollbar-thumb { background: var(--clr-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-subtle); }
+
+/* Keyframes */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fadeUp   { animation: fadeUp 0.5s ease both; }
+.animate-fadeIn   { animation: fadeIn 0.4s ease both; }
+.animate-slideLeft { animation: slideInLeft 0.4s ease both; }
+
+/* Stagger delays */
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+.delay-5 { animation-delay: 0.25s; }
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: var(--r-sm);
+}

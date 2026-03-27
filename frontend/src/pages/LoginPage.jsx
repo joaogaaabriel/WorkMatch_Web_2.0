@@ -1,406 +1,238 @@
-  import React, { useState, useContext } from "react";
-  import { useNavigate } from "react-router-dom";
-  import { AuthContext } from "../context/AuthContext";
+/**
+ * WorkMatch 2.0 — LoginPage
+ * BUG CORRIGIDO: URL usa authService (porta 8082 / VITE_API_URL1)
+ */
+import React, { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { authService } from "../services/api";
+import { Btn, Input, Card } from "../components/ui";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
-  import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Snackbar,
-    Alert,
-    Card,
-    CardContent,
-  } from "@mui/material";
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+  const { toast, showToast, hideToast } = useToast();
 
-  import axios from "axios";
-import logo from "../assets/Logo.png";
+  const [form, setForm] = useState({ email: "", senha: "" });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  function LoginPage() {
-    const navigate = useNavigate();
-    const { login } = useContext(AuthContext);
-
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const API = import.meta.env.VITE_API_URL1;
-
-    const [notificacao, setNotificacao] = useState({
-      aberta: false,
-      mensagem: "",
-      tipo: "success",
-    });
-
-    const handleLogin = async (e) => {
-      e.preventDefault();
-
-      try {
-        const response = await axios.post(`${API}/api/login`, { //teste
-          email: email.includes("@") ? email : null,
-          login: !email.includes("@") ? email : null,
-          senha: password,
-        });
-
-        localStorage.setItem("token", response.data.token);
-
-        login({
-          token: response.data.token,
-          nome: response.data.nome,
-          role: response.data.role
-        });
-
-        mostrarNotificacao(`Bem-vindo, ${response.data.nome}!`, "success");
-
-        navigate("/home");
-
-      } catch (error) {
-        console.error("Erro no login:", error);
-        mostrarNotificacao("Email ou senha inválidos!", "error");
-      }
-    };
-
-    const mostrarNotificacao = (mensagem, tipo = "success") => {
-      setNotificacao({ aberta: true, mensagem, tipo });
-    };
-
-    const textFieldStyle = {
-      "& .MuiOutlinedInput-root": {
-        borderRadius: "10px",
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        height: "55px",
-        
-        // ESTILO PARA QUANDO O CHROME PREENCHE AUTOMATICAMENTE
-        "&:-webkit-autofill": {
-          WebkitBoxShadow: "0 0 0 1000px rgba(255, 255, 255, 0.9) inset !important",
-          WebkitTextFillColor: "#1e293b !important",
-        },
-        "&:-webkit-autofill:hover": {
-          WebkitBoxShadow: "0 0 0 1000px rgba(255, 255, 255, 0.95) inset !important",
-        },
-        "&:-webkit-autofill:focus": {
-          WebkitBoxShadow: "0 0 0 1000px rgba(255, 255, 255, 0.9) inset !important",
-        },
-        
-        "& fieldset": {
-          borderColor: "#e2e8f0",
-          borderWidth: "2px",
-        },
-        "&:hover fieldset": {
-          borderColor: "#3b82f6",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: "#3b82f6",
-          borderWidth: "2px",
-        },
-      },
-      
-      "& .MuiInputLabel-root": {
-        color: "#64748b",
-        "&.Mui-focused": {
-          color: "#3b82f6",
-        },
-      },
-      
-      "& .MuiOutlinedInput-input": {
-        color: "#1e293b",
-        fontWeight: 500,
-        padding: "20px 24px 24px 16px",
-        fontSize: "16px",
-        
-        // ESTILO ESPECÍFICO PARA O INPUT COM AUTOFILL
-        "&:-webkit-autofill": {
-          WebkitBoxShadow: "0 0 0 1000px rgba(255, 255, 255, 0.9) inset !important",
-          WebkitTextFillColor: "#1e293b !important",
-          backgroundColor: "rgba(255, 255, 255, 0.9) !important",
-        },
-      },
-      
-      marginBottom: "0px",
-    };
-
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          width: "100vw",
-          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
-          fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          overflow: "hidden",
-          margin: 0,
-          padding: 0,
-        }}
-      >
-        {/* Elementos Decorativos do Fundo */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            overflow: "hidden",
-            zIndex: 0,
-          }}
-        >
-          <Box
-            sx={{
-              position: "absolute",
-              width: "200px",
-              height: "200px",
-              background: "linear-gradient(135deg, #3b82f6, #10b981)",
-              borderRadius: "50%",
-              opacity: 0.1,
-              top: "-50px",
-              right: "-50px",
-            }}
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              width: "150px",
-              height: "150px",
-              background: "linear-gradient(135deg, #8b5cf6, #3b82f6)",
-              borderRadius: "50%",
-              opacity: 0.1,
-              bottom: "-30px",
-              left: "-30px",
-            }}
-          />
-        </Box>
-
-        {/* Cabeçalho */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            py: 3,
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
-            backdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
-            boxShadow: "0 5px 3px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            zIndex: 10,
-          }}
-        >
-          {/* Logo */}
-          <Box
-            component="img"
-            src={logo}
-            alt="WorkMatch Logo"
-            onClick={() => navigate("/")}
-            sx={{
-              height: { xs: "35px", md: "45px" },
-              width: "auto",
-              ml: { xs: 2, md: 4 },
-              cursor: "pointer",
-              transition: "transform 0.2s ease",
-              "&:hover": {
-                transform: "scale(1.05)",
-              },
-            }}
-          />
-        </Box>
-
-        {/* Conteúdo Principal do Login */}
-        <Box sx={{ zIndex: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              py: 4,
-              position: "relative",
-              zIndex: 1,
-              width: "100%",
-              maxWidth: "100% !important",
-              mx: 0,
-              px: { xs: 2, sm: 3, md: 4 },
-              mt: 10,
-            }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                maxWidth: { xs: "100%", sm: "90%", md: "450px" },
-                animation: "fadeInUp 0.8s ease-out",
-                "@keyframes fadeInUp": {
-                  from: {
-                    opacity: 0,
-                    transform: "translateY(30px)",
-                  },
-                  to: {
-                    opacity: 1,
-                    transform: "translateY(0)",
-                  },
-                },
-              }}
-            >
-              <Card
-                sx={{
-                  p: { xs: 1, sm: 2, md: 3 },
-                  borderRadius: "16px",
-                  background: "rgba(255, 255, 255, 0.95)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.8)",
-                  boxShadow: "0 15px 30px rgba(0, 0, 0, 0.1)",
-                  position: "relative",
-                  overflow: "hidden",
-                  width: "100%",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "6px",
-                    background: "linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6)",
-                  },
-                }}
-              >
-                <CardContent sx={{ 
-                  p: { xs: 1, sm: 1, md: 2 },
-                  "&:last-child": {
-                    pb: { xs: 1, sm: 1, md: 2 }
-                  }
-                }}>
-                  {/* Cabeçalho do Login */}
-                  <Box sx={{ textAlign: "center", mb: 4 }}>
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        fontWeight: 800,
-                        background: "linear-gradient(135deg, #1e293b 0%, #374151 100%)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        color: "transparent",
-                        mb: 1,
-                        fontSize: { xs: "2rem", sm: "2.5rem", md: "3rem" },
-                      }}
-                    >
-                      Login
-                    </Typography>
-                    
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        color: "#64748b", 
-                        mb: 4,
-                        fontSize: { xs: "1rem", sm: "1.1rem", md: "1.2rem" }
-                      }}
-                    >
-                      Acesse sua conta WorkMatch
-                    </Typography>
-                  </Box>
-
-                  <Box component="form" onSubmit={handleLogin}>
-                    {/* Campo Email */}
-                    <TextField
-                      label="E-mail"
-                      variant="outlined"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      fullWidth
-                      required
-                      sx={textFieldStyle}
-                    />
-
-                    {/* Campo Senha */}
-                    <TextField
-                      label="Senha"
-                      type="password"
-                      variant="outlined"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      fullWidth
-                      required
-                      sx={{
-                        ...textFieldStyle,
-                        mt: 2
-                      }}
-                    />
-
-                    {/* Botão Entrar */}
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      fullWidth
-                      sx={{
-                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                        borderRadius: "12px",
-                        py: 2,
-                        fontWeight: 700,
-                        textTransform: "none",
-                        fontSize: { xs: "1rem", sm: "1.1rem" },
-                        boxShadow: "0 8px 25px rgba(59, 130, 246, 0.4)",
-                        transition: "all 0.3s ease",
-                        mt: 3,
-                        "&:hover": {
-                          background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 12px 35px rgba(59, 130, 246, 0.6)",
-                        },
-                      }}
-                    >
-                      Entrar
-                    </Button>
-
-                    {/* Botão Criar Conta */}
-                    <Button
-                      onClick={() => navigate("/cadastro")}
-                      variant="outlined"
-                      fullWidth
-                      sx={{
-                        borderColor: "#e2e8f0",
-                        color: "#64748b",
-                        borderRadius: "12px",
-                        py: 1,
-                        fontWeight: 600,
-                        textTransform: "none",
-                        fontSize: { xs: "0.9rem", sm: "1rem" },
-                        mt: 2,
-                        "&:hover": {
-                          borderColor: "#3b82f6",
-                          backgroundColor: "rgba(59, 130, 246, 0.04)",
-                          color: "#3b82f6",
-                          transform: "translateY(-1px)",
-                        },
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      Criar Conta
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-
-            {/* Snackbar para notificações */}
-            <Snackbar
-              open={notificacao.aberta}
-              autoHideDuration={4000}
-              onClose={() => setNotificacao(prev => ({ ...prev, aberta: false }))}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-              <Alert 
-                onClose={() => setNotificacao(prev => ({ ...prev, aberta: false }))} 
-                severity={notificacao.tipo} 
-                sx={{ width: '100%' }}
-              >
-                {notificacao.mensagem}
-              </Alert>
-            </Snackbar>
-          </Box>
-        </Box>
-      </Box>
-    );
+  function handleChange(e) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
-  export default LoginPage;
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.email || !form.senha) {
+      showToast("Preencha todos os campos.", "warning");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = await authService.login({
+        email: form.email.includes("@") ? form.email : null,
+        login: !form.email.includes("@") ? form.email : null,
+        senha: form.senha,
+      });
+
+      login({ token: data.token, nome: data.nome, role: data.role });
+      showToast(`Bem-vindo, ${data.nome}! 👋`, "success");
+
+      setTimeout(() => navigate("/home"), 600);
+    } catch (err) {
+      const msg = err.response?.status === 401
+        ? "E-mail ou senha incorretos."
+        : "Não foi possível conectar. Tente novamente.";
+      showToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      fontFamily: "var(--font-body)",
+    }}>
+
+      {/* ── Painel esquerdo (decorativo, oculto em mobile) ── */}
+      <div style={{
+        flex: 1,
+        background: "var(--grad-hero)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 48,
+        position: "relative",
+        overflow: "hidden",
+      }}
+        className="hide-mobile"
+      >
+        <style>{`@media(max-width:768px){.hide-mobile{display:none!important}}`}</style>
+
+        {/* Blob */}
+        <div style={{ position:"absolute", width:400, height:400, borderRadius:"50%", background:"rgba(255,255,255,0.06)", top:-100, right:-100 }} />
+        <div style={{ position:"absolute", width:200, height:200, borderRadius:"50%", background:"rgba(245,158,11,0.15)", bottom:40, left:-60 }} />
+
+        <div style={{ position:"relative", zIndex:1, textAlign:"center", color:"#fff" }}>
+          <div style={{
+            fontSize: 64,
+            fontWeight: 900,
+            background: "rgba(255,255,255,0.15)",
+            borderRadius: 24,
+            width: 100,
+            height: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 32px",
+          }}>
+            🔧
+          </div>
+
+          <h2 style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 40,
+            marginBottom: 16,
+            lineHeight: 1.15,
+          }}>
+            Bem-vindo de volta ao <em style={{ color: "#fcd34d" }}>WorkMatch</em>
+          </h2>
+          <p style={{ fontSize: 17, opacity: 0.8, lineHeight: 1.7, maxWidth: 380 }}>
+            Conectamos você aos melhores profissionais autônomos da sua região.
+            Agende com facilidade e segurança.
+          </p>
+
+          <div style={{ display:"flex", gap:32, justifyContent:"center", marginTop:40 }}>
+            {[
+              { n: "500+", l: "Profissionais" },
+              { n: "2.4k", l: "Agendamentos" },
+              { n: "4.8★", l: "Avaliação" },
+            ].map(({ n, l }) => (
+              <div key={l} style={{ textAlign:"center" }}>
+                <p style={{ fontSize:28, fontWeight:900, color:"#fcd34d" }}>{n}</p>
+                <p style={{ fontSize:13, opacity:0.75 }}>{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Painel direito (formulário) ── */}
+      <div style={{
+        width: "min(100%, 480px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "48px 32px",
+        background: "var(--clr-bg)",
+      }}>
+        {/* Logo mobile */}
+        <div style={{ textAlign:"center", marginBottom: 40 }}>
+          <span
+            onClick={() => navigate("/")}
+            style={{
+              cursor:"pointer",
+              fontWeight:900,
+              fontSize:30,
+              background:"var(--grad-brand)",
+              WebkitBackgroundClip:"text",
+              WebkitTextFillColor:"transparent",
+            }}
+          >
+            WorkMatch
+          </span>
+          <h1 style={{ fontSize:28, fontWeight:800, color:"var(--clr-text)", marginTop:24, marginBottom:6 }}>
+            Entrar na sua conta
+          </h1>
+          <p style={{ color:"var(--clr-muted)", fontSize:16 }}>
+            Use seu e-mail ou login para acessar
+          </p>
+        </div>
+
+        <Card style={{ width:"100%", padding:32 }}>
+          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:20 }}>
+            <Input
+              label="E-mail ou login"
+              name="email"
+              type="text"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="seuemail@exemplo.com"
+              icon="👤"
+              required
+              autoComplete="username"
+            />
+
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              <label style={{ fontSize:15, fontWeight:700, color:"var(--clr-text)" }}>
+                Senha <span style={{ color:"var(--clr-danger)" }}>*</span>
+              </label>
+              <div style={{ position:"relative" }}>
+                <span style={{ position:"absolute", left:14, top:"50%", transform:"translateY(-50%)", fontSize:18, pointerEvents:"none" }}>🔒</span>
+                <input
+                  name="senha"
+                  type={showPassword ? "text" : "password"}
+                  value={form.senha}
+                  onChange={handleChange}
+                  placeholder="Sua senha"
+                  required
+                  autoComplete="current-password"
+                  style={{
+                    width:"100%",
+                    padding:"14px 48px 14px 44px",
+                    fontSize:16,
+                    fontFamily:"var(--font-body)",
+                    fontWeight:500,
+                    color:"var(--clr-text)",
+                    background:"var(--clr-surface)",
+                    border:"2px solid var(--clr-border)",
+                    borderRadius:12,
+                    outline:"none",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position:"absolute", right:12, top:"50%", transform:"translateY(-50%)",
+                    background:"none", border:"none", cursor:"pointer", fontSize:18, padding:4,
+                  }}
+                >{showPassword ? "🙈" : "👁️"}</button>
+              </div>
+            </div>
+
+            <Btn type="submit" fullWidth size="lg" loading={loading}>
+              Entrar na conta
+            </Btn>
+          </form>
+        </Card>
+
+        <div style={{ textAlign:"center", marginTop:24 }}>
+          <p style={{ color:"var(--clr-muted)", fontSize:15 }}>
+            Não tem conta?{" "}
+            <button
+              onClick={() => navigate("/cadastro")}
+              style={{
+                background:"none", border:"none",
+                color:"var(--clr-primary-lt)", fontWeight:700,
+                fontSize:15, cursor:"pointer",
+                fontFamily:"var(--font-body)",
+              }}
+            >
+              Criar conta grátis →
+            </button>
+          </p>
+        </div>
+      </div>
+
+      <Toast {...toast} onClose={hideToast} />
+    </div>
+  );
+}

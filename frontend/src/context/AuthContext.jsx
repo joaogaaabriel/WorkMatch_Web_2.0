@@ -1,30 +1,46 @@
-import { createContext, useState, useEffect } from "react";
+/**
+ * WorkMatch 2.0 — AuthContext
+ * BUG CORRIGIDO: logout agora limpa AuthContext + localStorage token
+ */
+import { createContext, useState, useEffect, useContext } from "react";
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("user");
+      if (saved) setUser(JSON.parse(saved));
+    } catch {
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   function login(userData) {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", userData.token);
   }
 
   function logout() {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token"); // BUG FIX: limpa o token também
   }
 
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) setUser(JSON.parse(savedUser));
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
 
+// Hook conveniente
+export function useAuth() {
+  return useContext(AuthContext);
+}

@@ -1,873 +1,390 @@
-import React, { useEffect, useState } from "react";
+/**
+ * WorkMatch 2.0 — ProfissionalDetalhes (Agendamento)
+ * Mantém contrato de API original; redesenha UX para público 40-70 anos
+ */
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Box,
-  Button,
-  Container,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-  Avatar,
-  Divider,
-  Paper,
-  Chip,
-  IconButton,
-  Modal,
-} from "@mui/material";
-import { LocalizationProvider, StaticDatePicker } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import ptBR from "date-fns/locale/pt-BR";
-import axios from "axios";
-import MenuLateral from "../components/MenuLateral";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import StarIcon from "@mui/icons-material/Star";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PhoneIcon from "@mui/icons-material/Phone";
-import EmailIcon from "@mui/icons-material/Email";
-import DescriptionIcon from "@mui/icons-material/Description";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { profissionaisService, agendaService, agendamentosService } from "../services/api";
+import PageLayout from "../components/PageLayout";
+import { Card, Btn, Spinner, EmptyState, InfoRow, Badge, Divider, Avatar } from "../components/ui";
+import Toast from "../components/Toast";
+import { useToast } from "../hooks/useToast";
 
-function ProfissionalDetalhes() {
+function fakeRating(id) {
+  return (4 + (Math.sin((id || 0) * 100) * 0.5 + 0.5)).toFixed(1);
+}
+
+function toDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function normalizeTime(t) {
+  if (!t) return "";
+  let s = String(t).trim();
+  if (/^\d:\d\d$/.test(s)) s = "0" + s;
+  return s.split(":").slice(0,2).map((p,i) => i===0?p.padStart(2,"0"):p).join(":");
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function getFirstDayOfWeek(year, month) {
+  return new Date(year, month, 1).getDay();
+}
+
+const WEEKDAYS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const MONTHS_PT = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+function MiniCalendar({ selected, onChange }) {
+  const today = new Date();
+  const [view, setView] = useState({ year: today.getFullYear(), month: today.getMonth() });
+
+  const days = getDaysInMonth(view.year, view.month);
+  const firstDay = getFirstDayOfWeek(view.year, view.month);
+  const selectedStr = selected ? toDateStr(selected) : "";
+
+  function prevMonth() {
+    setView(v => {
+      if (v.month === 0) return { year: v.year - 1, month: 11 };
+      return { ...v, month: v.month - 1 };
+    });
+  }
+  function nextMonth() {
+    setView(v => {
+      if (v.month === 11) return { year: v.year + 1, month: 0 };
+      return { ...v, month: v.month + 1 };
+    });
+  }
+
+  return (
+    <div>
+      {/* Header navegação */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <button onClick={prevMonth} style={{ background:"none", border:"1.5px solid var(--clr-border)", borderRadius:10, width:36, height:36, cursor:"pointer", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center" }}>‹</button>
+        <span style={{ fontWeight:800, fontSize:17, color:"var(--clr-text)" }}>
+          {MONTHS_PT[view.month]} {view.year}
+        </span>
+        <button onClick={nextMonth} style={{ background:"none", border:"1.5px solid var(--clr-border)", borderRadius:10, width:36, height:36, cursor:"pointer", fontSize:18, display:"flex", alignItems:"center", justifyContent:"center" }}>›</button>
+      </div>
+
+      {/* Dias da semana */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:2, marginBottom:6 }}>
+        {WEEKDAYS.map(d => (
+          <div key={d} style={{ textAlign:"center", fontSize:12, fontWeight:700, color:"var(--clr-muted)", padding:"4px 0" }}>{d}</div>
+        ))}
+      </div>
+
+      {/* Dias */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:4 }}>
+        {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
+        {Array.from({ length: days }).map((_, i) => {
+          const day = i + 1;
+          const date = new Date(view.year, view.month, day);
+          const dateStr = toDateStr(date);
+          const isToday = toDateStr(today) === dateStr;
+          const isSelected = selectedStr === dateStr;
+          const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+          return (
+            <button
+              key={day}
+              disabled={isPast}
+              onClick={() => !isPast && onChange(date)}
+              style={{
+                width:"100%",
+                aspectRatio:"1",
+                borderRadius:10,
+                border: isSelected ? "none" : isToday ? "2px solid var(--clr-primary-lt)" : "none",
+                background: isSelected ? "var(--clr-primary)" : isToday ? "var(--clr-primary-bg)" : "transparent",
+                color: isSelected ? "#fff" : isPast ? "var(--clr-border)" : "var(--clr-text)",
+                fontFamily:"var(--font-body)",
+                fontSize:15,
+                fontWeight: isSelected || isToday ? 800 : 500,
+                cursor: isPast ? "not-allowed" : "pointer",
+                opacity: isPast ? 0.4 : 1,
+                transition:"all .15s",
+              }}
+              onMouseEnter={e => { if (!isPast && !isSelected) e.currentTarget.style.background = "var(--clr-primary-bg)"; }}
+              onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isToday ? "var(--clr-primary-bg)" : "transparent"; }}
+            >{day}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function ProfissionalDetalhes() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const API = import.meta.env.VITE_API_URL;
+  const { toast, showToast, hideToast } = useToast();
 
   const [profissional, setProfissional] = useState(null);
+  const [loadingProf, setLoadingProf] = useState(true);
+
   const [dataSelecionada, setDataSelecionada] = useState(new Date());
   const [horarios, setHorarios] = useState([]);
   const [horarioSelecionado, setHorarioSelecionado] = useState("");
-  const [openModal, setOpenModal] = useState(false);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
 
-  const token = localStorage.getItem("token");
-
-  // Impedir acesso sem login
-  useEffect(() => {
-    if (!token) navigate("/login");
-  }, [token, navigate]);
+  const [confirmando, setConfirmando] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Buscar dados do profissional
   useEffect(() => {
-    axios
-      .get(`${API}/api/profissionais/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => setProfissional(res.data))
-      .catch((err) => {
-        if (err.response && [401, 403].includes(err.response.status)) {
-          navigate("/login");
-        }
-      });
-  }, [id, token, navigate]);
+    profissionaisService.buscarPorId(id)
+      .then(setProfissional)
+      .catch(() => showToast("Profissional não encontrado.", "error"))
+      .finally(() => setLoadingProf(false));
+  }, [id]);
 
-  // Buscar horários disponíveis ao trocar a data
-  useEffect(() => {
-    if (!dataSelecionada) return;
-
-    const dataStr = `${dataSelecionada.getFullYear()}-${String(
-      dataSelecionada.getMonth() + 1
-    ).padStart(2, "0")}-${String(dataSelecionada.getDate()).padStart(2, "0")}`;
-
-    const normalizeTime = (time) => {
-      if (!time) return "";
-      let t = String(time).trim();
-      if (/^\d:\d\d$/.test(t)) t = "0" + t;
-      if (t.includes(":")) {
-        const [hh, mm] = t.split(":");
-        return `${hh.padStart(2, "0")}:${mm.padStart(2, "0")}`;
-      }
-      return t;
-    };
-
-    axios
-      .get(`${API}/api/agendas/profissionais/${id}/agendas`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { data: dataStr },
-      })
-      .then((res) => {
-        const horariosBackend = (res.data.horarios || []).map(normalizeTime);
-        const ocupados = (res.data.ocupados || []).map(normalizeTime);
-
-        const livres = horariosBackend.filter((h) => !ocupados.includes(h));
-
-        livres.sort((a, b) => {
+  // Buscar horários ao trocar data
+  const carregarHorarios = useCallback(async (data) => {
+    if (!data) return;
+    setLoadingHorarios(true);
+    setHorarioSelecionado("");
+    try {
+      const res = await agendaService.horariosPorData(id, toDateStr(data));
+      const horariosBackend = (res.horarios || []).map(normalizeTime);
+      const ocupados = (res.ocupados || []).map(normalizeTime);
+      const livres = horariosBackend
+        .filter(h => !ocupados.includes(h))
+        .sort((a, b) => {
           const [ha, ma] = a.split(":").map(Number);
           const [hb, mb] = b.split(":").map(Number);
           return ha - hb || ma - mb;
         });
-
-        setHorarios(livres);
-        setHorarioSelecionado("");
-      })
-      .catch(() => {
-        setHorarios([]);
-        setHorarioSelecionado("");
-      });
-  }, [dataSelecionada, id, token]);
-
-  const handleConfirmarAgendamento = () => {
-    if (!horarioSelecionado) {
-      setOpenModal(true);
-      return;
+      setHorarios(livres);
+    } catch {
+      setHorarios([]);
+    } finally {
+      setLoadingHorarios(false);
     }
+  }, [id]);
 
-    const dataFormatada = `${dataSelecionada.getFullYear()}-${String(
-      dataSelecionada.getMonth() + 1
-    ).padStart(2, "0")}-${String(dataSelecionada.getDate()).padStart(2, "0")}`;
+  useEffect(() => {
+    carregarHorarios(dataSelecionada);
+  }, [dataSelecionada, carregarHorarios]);
 
-    axios
-      .post(
-        "${API}/api/agendamentos",
-        {
-          data: dataFormatada,
-          horario: horarioSelecionado,
-          profissional: { id },
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      .then(() => {
-        setOpenModal(true);
-        setHorarioSelecionado("");
-        const novosHorarios = horarios.filter(h => h !== horarioSelecionado);
-        setHorarios(novosHorarios);
-      })
-      .catch((err) => {
-        alert(err.response?.data?.error || "Erro ao criar agendamento");
+  async function confirmarAgendamento() {
+    if (!horarioSelecionado) return;
+    setConfirmando(true);
+    try {
+      await agendamentosService.criar({
+        profissionalId: id,
+        data: toDateStr(dataSelecionada),
+        horario: horarioSelecionado,
       });
-  };
+      setShowConfirm(false);
+      showToast("Agendamento confirmado com sucesso! 🎉", "success");
+      setHorarioSelecionado("");
+      carregarHorarios(dataSelecionada);
+    } catch (err) {
+      const msg = err.response?.data?.message || "Erro ao confirmar agendamento.";
+      showToast(msg, "error");
+    } finally {
+      setConfirmando(false);
+    }
+  }
 
-  if (!profissional) {
+  if (loadingProf) {
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: 600,
-            color: "#3b82f6",
-          }}
-        >
-          Carregando informações do profissional...
-        </Typography>
-      </Box>
+      <PageLayout title="Carregando..." backPath="/home">
+        <div style={{ display:"flex", justifyContent:"center", padding:"80px 0" }}>
+          <Spinner size={48} />
+        </div>
+      </PageLayout>
     );
   }
 
-  // Fallback para imagem
-  const fotoPerfil =
-    profissional.fotoPerfil && profissional.fotoPerfil.trim() !== ""
-      ? profissional.fotoPerfil
-      : "/no-image.png";
+  if (!profissional) {
+    return (
+      <PageLayout title="Profissional" backPath="/home">
+        <EmptyState emoji="❌" title="Profissional não encontrado" description="O profissional não foi encontrado. Volte ao início."
+          action={<Btn onClick={() => navigate("/home")}>Voltar ao início</Btn>} />
+      </PageLayout>
+    );
+  }
+
+  const rating = fakeRating(profissional.id);
+  const dataLabel = dataSelecionada.toLocaleDateString("pt-BR", { weekday:"long", day:"2-digit", month:"long" });
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        width: "100%",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%)",
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        position: "relative",
-        overflow: "hidden",
-        display: "flex",
-      }}
-    >
-      {/* Elementos Decorativos do Fundo */}
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          overflow: "hidden",
-          zIndex: 0,
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            width: "200px",
-            height: "200px",
-            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.08))",
-            borderRadius: "50%",
-            top: "-50px",
-            right: "-50px",
-          }}
-        />
-        <Box
-          sx={{
-            position: "absolute",
-            width: "150px",
-            height: "150px",
-            background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.08))",
-            borderRadius: "50%",
-            bottom: "-30px",
-            left: "-30px",
-          }}
-        />
-      </Box>
+    <PageLayout title={profissional.nome} subtitle={profissional.especialidade} backPath="/home">
 
-      <MenuLateral />
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:24 }}>
 
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          ml: { xs: 2, md: 12 },
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {/* Header Estilizado - AGORA FIXO */}
-        <Box
-          sx={{
-            py: 3,
-            px: 4,
-            background: "rgba(255, 255, 255, 0.98)",
-            backdropFilter: "blur(10px)",
-            borderBottom: "1px solid rgba(226, 232, 240, 0.8)",
-            boxShadow: "0 5px 20px rgba(0, 0, 0, 0.05)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 2,
-            position: "fixed",
-            top: 0,
-            left: { xs: 2, md: 1 },
-            right: 0,
-            zIndex: 1000,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            {/* BOTÃO DE VOLTAR AQUI */}
-            <IconButton
-              onClick={() => navigate(-1)}
-              sx={{
-                color: "#3b82f6",
-                background: "rgba(59, 130, 246, 0.1)",
-                "&:hover": {
-                  background: "rgba(59, 130, 246, 0.2)",
-                },
-                ml: 8, // ← ADICIONE ESTA LINHA (ou ml: 3, ml: 4, etc.)
-              }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 900,
-                background: "linear-gradient(135deg, #1e293b 0%, #3b82f6 100%)",
-                backgroundClip: "text",
-                WebkitBackgroundClip: "text",
-                color: "transparent",
-              }}
-            >
-              Perfil do Profissional
-            </Typography>
-            
-            <Chip
-              icon={<StarIcon />}
-              label="Profissional Verificado"
-              sx={{
-                background: "linear-gradient(135deg, #10b981, #059669)",
-                color: "white",
-                fontWeight: 600,
-                ml: 2,
-              }}
-            />
-          </Box>
-        </Box>
+        {/* ── Coluna esquerda: dados do profissional ── */}
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          {/* Card perfil */}
+          <Card>
+            <div style={{
+              height:100,
+              background:"linear-gradient(135deg,#1e40af,#0d9488)",
+            }} />
+            <div style={{ padding:"0 24px 24px" }}>
+              <div style={{ marginTop:-36, marginBottom:16 }}>
+                <div style={{
+                  width:72, height:72, borderRadius:"50%",
+                  background:"linear-gradient(135deg,#1e40af,#3b82f6)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:28, fontWeight:900, color:"#fff",
+                  border:"4px solid #fff",
+                  boxShadow:"var(--shadow-md)",
+                }}>
+                  {(profissional.nome?.[0] || "P").toUpperCase()}
+                </div>
+              </div>
 
-        {/* Conteúdo Principal - COM SCROLL E MARGEM PARA O HEADER FIXO */}
-        <Box
-          sx={{
-            flex: 1,
-            mt: "96px", // Altura do header fixo (py:3 * 2 + conteúdo)
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Container
-            maxWidth="xl"
-            sx={{
-              flex: 1,
-              py: 4,
-              px: { xs: 2, sm: 3, md: 4 },
-              display: "flex",
-              flexDirection: { xs: "column", lg: "row" },
-              gap: 4,
-              overflow: "auto",
-            }}
-          >
-            {/* Coluna Esquerda - Informações do Profissional */}
-            <Box
-              sx={{
-                flex: { xs: 1, lg: 0.4 },
-                display: "flex",
-                flexDirection: "column",
-                gap: 3,
-                minHeight: "min-content",
-              }}
-            >
-              {/* Card do Perfil */}
-              <Card
-                sx={{
-                  borderRadius: "20px",
-                  background: "rgba(255, 255, 255, 0.95)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.8)",
-                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "6px",
-                    background: "linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6)",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 4, display: "flex", flexDirection: "column" }}>
-                  {/* Avatar e Nome */}
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 4 }}>
-                    <Avatar
-                      src={fotoPerfil}
-                      alt={profissional.nome}
-                      sx={{
-                        width: 140,
-                        height: 140,
-                        border: "4px solid #3b82f6",
-                        boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
-                        mb: 3,
-                      }}
-                    />
-                    
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        fontWeight: 800,
-                        background: "linear-gradient(135deg, #1e293b 0%, #374151 100%)",
-                        backgroundClip: "text",
-                        WebkitBackgroundClip: "text",
-                        color: "transparent",
-                        mb: 1,
-                        textAlign: "center",
-                      }}
-                    >
-                      {profissional.nome}
-                    </Typography>
-                    
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        color: "#3b82f6",
-                        fontWeight: 600,
-                        mb: 3,
-                        textAlign: "center",
-                      }}
-                    >
-                      {profissional.servico || "Profissional"}
-                    </Typography>
-                  </Box>
+              <h2 style={{ fontSize:22, fontWeight:900, color:"var(--clr-text)", marginBottom:4 }}>
+                {profissional.nome}
+              </h2>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
+                <Badge color="#d97706">{profissional.especialidade}</Badge>
+                <span style={{ fontSize:14, color:"var(--clr-muted)", fontWeight:600 }}>⭐ {rating}</span>
+              </div>
 
-                  <Divider sx={{ mb: 3, borderColor: "#e2e8f0" }} />
+              <Divider style={{ marginBottom:16 }} />
 
-                  {/* Informações de Contato */}
-                  <Box>
-                    <Grid container spacing={2}>
-                      <Grid size={{ xs: 12 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "12px",
-                            background: "rgba(59, 130, 246, 0.05)",
-                            border: "1px solid rgba(59, 130, 246, 0.1)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            mb: 2,
-                          }}
-                        >
-                          <PhoneIcon sx={{ color: "#3b82f6" }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                              WhatsApp
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                              {profissional.telefone ? (
-                                <a
-                                  href={`https://wa.me/55${profissional.telefone.replace(/\D/g, "")}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  style={{
-                                    color: "#3b82f6",
-                                    textDecoration: "none",
-                                    fontWeight: "bold",
-                                  }}
-                                >
-                                  {profissional.telefone}
-                                </a>
-                              ) : (
-                                "Não informado"
-                              )}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
+              <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+                {profissional.descricao && (
+                  <InfoRow emoji="📝" label="Sobre" value={profissional.descricao} />
+                )}
+                {profissional.experienciaAnos > 0 && (
+                  <InfoRow emoji="⏱️" label="Experiência" value={`${profissional.experienciaAnos} anos`} />
+                )}
+                {(profissional.cidade || profissional.estado) && (
+                  <InfoRow emoji="📍" label="Localização" value={[profissional.cidade, profissional.estado].filter(Boolean).join(" — ")} />
+                )}
+                {profissional.telefone && (
+                  <InfoRow emoji="📱" label="Telefone" value={profissional.telefone} />
+                )}
+                {profissional.email && (
+                  <InfoRow emoji="✉️" label="E-mail" value={profissional.email} />
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
 
-                      <Grid size={{ xs: 12 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "12px",
-                            background: "rgba(16, 185, 129, 0.05)",
-                            border: "1px solid rgba(16, 185, 129, 0.1)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            mb: 2,
-                          }}
-                        >
-                          <EmailIcon sx={{ color: "#10b981" }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                              Email
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                              {profissional.email || "Não informado"}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
+        {/* ── Coluna direita: agendamento ── */}
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          {/* Calendário */}
+          <Card style={{ padding:24 }}>
+            <h3 style={{ fontSize:18, fontWeight:800, marginBottom:20, color:"var(--clr-text)" }}>
+              📅 Escolha uma data
+            </h3>
+            <MiniCalendar selected={dataSelecionada} onChange={setDataSelecionada} />
+          </Card>
 
-                      <Grid size={{ xs: 12 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "12px",
-                            background: "rgba(139, 92, 246, 0.05)",
-                            border: "1px solid rgba(139, 92, 246, 0.1)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 2,
-                            mb: 2,
-                          }}
-                        >
-                          <LocationOnIcon sx={{ color: "#8b5cf6" }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500 }}>
-                              Localização
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                              {profissional.cidade || "Não informada"}, {profissional.estado || "Não informado"}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
+          {/* Horários */}
+          <Card style={{ padding:24 }}>
+            <h3 style={{ fontSize:18, fontWeight:800, marginBottom:6, color:"var(--clr-text)" }}>
+              🕐 Horários disponíveis
+            </h3>
+            <p style={{ fontSize:14, color:"var(--clr-muted)", marginBottom:16, fontWeight:500 }}>
+              {dataLabel.charAt(0).toUpperCase() + dataLabel.slice(1)}
+            </p>
 
-                      <Grid size={{ xs: 12 }}>
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            borderRadius: "12px",
-                            background: "rgba(245, 158, 11, 0.05)",
-                            border: "1px solid rgba(245, 158, 11, 0.1)",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 2,
-                          }}
-                        >
-                          <DescriptionIcon sx={{ color: "#f59e0b", mt: 0.5 }} />
-                          <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" sx={{ color: "#64748b", fontWeight: 500, mb: 1 }}>
-                              Descrição
-                            </Typography>
-                            <Typography
-                              variant="body1"
-                              sx={{
-                                color: "#1e293b",
-                                lineHeight: 1.6,
-                                whiteSpace: "pre-line",
-                              }}
-                            >
-                              {profissional.descricao || "Este profissional ainda não adicionou uma descrição."}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-
-            {/* Coluna Direita - Agendamento */}
-            <Box
-              sx={{
-                flex: { xs: 1, lg: 0.6 },
-                display: "flex",
-                flexDirection: "column",
-                gap: 3,
-                minHeight: "min-content",
-              }}
-            >
-              {/* Card de Agendamento */}
-              <Card
-                sx={{
-                  borderRadius: "20px",
-                  background: "rgba(255, 255, 255, 0.95)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.8)",
-                  boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-                  position: "relative",
-                  overflow: "hidden",
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: "6px",
-                    background: "linear-gradient(90deg, #3b82f6, #10b981, #8b5cf6)",
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 4, display: "flex", flexDirection: "column" }}>
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 800,
-                      background: "linear-gradient(135deg, #1e293b 0%, #374151 100%)",
-                      backgroundClip: "text",
-                      WebkitBackgroundClip: "text",
-                      color: "transparent",
-                      mb: 1,
-                      textAlign: "center",
+            {loadingHorarios ? (
+              <div style={{ display:"flex", justifyContent:"center", padding:"24px 0" }}>
+                <Spinner size={32} />
+              </div>
+            ) : horarios.length === 0 ? (
+              <EmptyState
+                emoji="📭"
+                title="Sem horários disponíveis"
+                description="Não há horários para esta data. Tente outro dia."
+              />
+            ) : (
+              <div style={{
+                display:"grid",
+                gridTemplateColumns:"repeat(auto-fill, minmax(90px, 1fr))",
+                gap:10,
+              }}>
+                {horarios.map(h => (
+                  <button
+                    key={h}
+                    onClick={() => setHorarioSelecionado(h === horarioSelecionado ? "" : h)}
+                    style={{
+                      padding:"14px 8px",
+                      borderRadius:12,
+                      border: h === horarioSelecionado ? "none" : "2px solid var(--clr-border)",
+                      background: h === horarioSelecionado ? "var(--clr-primary)" : "var(--clr-surface)",
+                      color: h === horarioSelecionado ? "#fff" : "var(--clr-text)",
+                      fontSize:16,
+                      fontWeight:700,
+                      fontFamily:"var(--font-body)",
+                      cursor:"pointer",
+                      boxShadow: h === horarioSelecionado ? "var(--shadow-blue)" : "none",
+                      transition:"all .15s",
                     }}
-                  >
-                    Agendar Serviço
-                  </Typography>
+                    onMouseEnter={e => { if (h !== horarioSelecionado) e.currentTarget.style.borderColor = "var(--clr-primary-lt)"; }}
+                    onMouseLeave={e => { if (h !== horarioSelecionado) e.currentTarget.style.borderColor = "var(--clr-border)"; }}
+                  >{h}</button>
+                ))}
+              </div>
+            )}
 
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      color: "#64748b",
-                      mb: 4,
-                      fontWeight: 400,
-                      textAlign: "center",
-                      maxWidth: "600px",
-                      mx: "auto",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Escolha uma data e horário disponível para agendar seu serviço com {profissional.nome.split(" ")[0]}
-                  </Typography>
+            {horarioSelecionado && (
+              <div style={{ marginTop:20 }}>
+                <Divider style={{ marginBottom:16 }} />
+                <div style={{
+                  background:"var(--clr-primary-bg)",
+                  borderRadius:12,
+                  padding:"14px 16px",
+                  marginBottom:16,
+                  border:"1px solid #bfdbfe",
+                }}>
+                  <p style={{ fontSize:14, color:"var(--clr-primary)", fontWeight:700, marginBottom:2 }}>Resumo do agendamento</p>
+                  <p style={{ fontSize:15, color:"var(--clr-text)", fontWeight:600 }}>
+                    {profissional.nome} · {horarioSelecionado} · {dataLabel}
+                  </p>
+                </div>
+                <Btn fullWidth size="lg" onClick={() => setShowConfirm(true)}>
+                  ✅ Confirmar agendamento
+                </Btn>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
 
-                  <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, gap: 4 }}>
-                    {/* Calendário */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-                        <CalendarTodayIcon sx={{ color: "#3b82f6" }} />
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                          Escolha a Data
-                        </Typography>
-                      </Box>
-                      
-                      <LocalizationProvider dateAdapter={AdapterDateFns} locale={ptBR}>
-                        <StaticDatePicker
-                          displayStaticWrapperAs="desktop"
-                          value={dataSelecionada}
-                          onChange={(newValue) => setDataSelecionada(newValue)}
-                          sx={{
-                            backgroundColor: "transparent",
-                            borderRadius: 3,
-                            "& .MuiPickerStaticWrapper-root": {
-                              backgroundColor: "transparent",
-                              boxShadow: "none",
-                            },
-                            "& .MuiPickersDay-daySelected": {
-                              backgroundColor: "#3b82f6",
-                              color: "white",
-                              "&:hover": {
-                                backgroundColor: "#2563eb",
-                              },
-                            },
-                            "& .MuiPickersDay-today": {
-                              borderColor: "#3b82f6",
-                            },
-                          }}
-                        />
-                      </LocalizationProvider>
-                    </Box>
+      {/* ── Modal de confirmação ── */}
+      {showConfirm && (
+        <div style={{
+          position:"fixed", inset:0, zIndex:500,
+          background:"rgba(15,23,42,0.6)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          padding:16,
+          animation:"fadeIn .2s ease",
+        }}>
+          <Card style={{ padding:36, maxWidth:440, width:"100%" }}>
+            <div style={{ textAlign:"center", marginBottom:24 }}>
+              <div style={{ fontSize:48, marginBottom:12 }}>📅</div>
+              <h2 style={{ fontSize:22, fontWeight:900, color:"var(--clr-text)", marginBottom:8 }}>
+                Confirmar agendamento?
+              </h2>
+              <p style={{ color:"var(--clr-muted)", fontSize:16, lineHeight:1.6 }}>
+                Você está agendando com <strong>{profissional.nome}</strong> para<br />
+                <strong>{dataLabel}</strong> às <strong>{horarioSelecionado}</strong>.
+              </p>
+            </div>
 
-                    {/* Horários */}
-                    <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
-                        <AccessTimeIcon sx={{ color: "#10b981" }} />
-                        <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                          Horários Disponíveis
-                        </Typography>
-                      </Box>
+            <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <Btn fullWidth size="lg" loading={confirmando} onClick={confirmarAgendamento}>
+                ✅ Sim, confirmar
+              </Btn>
+              <Btn fullWidth variant="ghost" onClick={() => setShowConfirm(false)} disabled={confirmando}>
+                Cancelar
+              </Btn>
+            </div>
+          </Card>
+        </div>
+      )}
 
-                      {horarios.length > 0 ? (
-                        <>
-                          <Box
-                            sx={{
-                              flex: 1,
-                              display: "grid",
-                              gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", md: "repeat(4, 1fr)" },
-                              gap: 2,
-                              mb: 3,
-                              maxHeight: "300px",
-                              overflowY: "auto",
-                              pr: 1,
-                            }}
-                          >
-                            {horarios.map((h) => (
-                              <Button
-                                key={h}
-                                variant={horarioSelecionado === h ? "contained" : "outlined"}
-                                onClick={() => setHorarioSelecionado(h)}
-                                sx={{
-                                  borderRadius: "12px",
-                                  py: 2,
-                                  fontWeight: 600,
-                                  fontSize: "1rem",
-                                  borderColor: "#e2e8f0",
-                                  borderWidth: "2px",
-                                  color: horarioSelecionado === h ? "white" : "#64748b",
-                                  background: horarioSelecionado === h
-                                    ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-                                    : "transparent",
-                                  boxShadow: horarioSelecionado === h
-                                    ? "0 4px 12px rgba(59, 130, 246, 0.3)"
-                                    : "none",
-                                  "&:hover": {
-                                    borderColor: "#3b82f6",
-                                    color: "#3b82f6",
-                                    backgroundColor: "rgba(59, 130, 246, 0.04)",
-                                    transform: "translateY(-2px)",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                                  },
-                                  transition: "all 0.3s ease",
-                                }}
-                              >
-                                {h}
-                              </Button>
-                            ))}
-                          </Box>
-
-                          <Button
-                            variant="contained"
-                            size="large"
-                            onClick={handleConfirmarAgendamento}
-                            disabled={!horarioSelecionado}
-                            sx={{
-                              background: horarioSelecionado
-                                ? "linear-gradient(135deg, #10b981, #059669)"
-                                : "linear-gradient(135deg, #94a3b8, #64748b)",
-                              borderRadius: "12px",
-                              py: 2,
-                              fontWeight: 700,
-                              fontSize: "1.1rem",
-                              textTransform: "none",
-                              boxShadow: "0 8px 20px rgba(16, 185, 129, 0.3)",
-                              "&:hover": {
-                                background: "linear-gradient(135deg, #059669, #047857)",
-                                transform: "translateY(-2px)",
-                                boxShadow: "0 12px 25px rgba(16, 185, 129, 0.4)",
-                              },
-                              "&:disabled": {
-                                background: "linear-gradient(135deg, #94a3b8, #64748b)",
-                              },
-                              transition: "all 0.3s ease",
-                            }}
-                          >
-                            <CheckCircleIcon sx={{ mr: 1 }} />
-                            Confirmar Agendamento
-                          </Button>
-
-                          {horarioSelecionado && (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                textAlign: "center",
-                                mt: 2,
-                                color: "#10b981",
-                                fontWeight: 600,
-                              }}
-                            >
-                              ✅ Horário selecionado: {horarioSelecionado}
-                            </Typography>
-                          )}
-                        </>
-                      ) : (
-                        <Box
-                          sx={{
-                            flex: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexDirection: "column",
-                            textAlign: "center",
-                            p: 4,
-                          }}
-                        >
-                          <AccessTimeIcon sx={{ fontSize: 60, color: "#94a3b8", mb: 2, opacity: 0.5 }} />
-                          <Typography variant="h6" sx={{ color: "#64748b", mb: 1, fontWeight: 600 }}>
-                            Nenhum horário disponível
-                          </Typography>
-                          <Typography variant="body1" sx={{ color: "#94a3b8" }}>
-                            Selecione outra data para ver os horários disponíveis
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Box>
-          </Container>
-
-          {/* Footer */}
-          <Box
-            sx={{
-              py: 2,
-              px: 5,
-              background: "#1e293b",
-              color: "white",
-              textAlign: "center",
-              mt: "auto",
-              ml: { xs: 2, md: -12 },
-            }}
-          >
-            <Typography sx={{ color: "#94a3b8" }}>
-              © {new Date().getFullYear()} 2025 WorkMatch - Conectando você ao profissional certo, no momento certo.
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Modal de Confirmação */}
-      <Modal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
-        aria-labelledby="modal-title"
-        aria-describedby="modal-description"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Box
-          sx={{
-            backgroundColor: 'white',
-            borderRadius: '20px',
-            boxShadow: 24,
-            p: 4,
-            maxWidth: 400,
-            mx: 2,
-            textAlign: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: "6px",
-              background: "linear-gradient(90deg, #3b82f6, #10b981)",
-            },
-          }}
-        >
-          <Box
-            sx={{
-              color: '#10b981',
-              mb: 2,
-              '& .MuiSvgIcon-root': {
-                fontSize: '3rem',
-              },
-            }}
-          >
-            <CheckCircleIcon />
-          </Box>
-          <Typography id="modal-title" variant="h5" sx={{ fontWeight: 800, mb: 2, color: '#1e293b' }}>
-            Agendamento Confirmado!
-          </Typography>
-          <Typography id="modal-description" sx={{ color: '#64748b', mb: 3, lineHeight: 1.6 }}>
-            Seu agendamento com <strong>{profissional?.nome}</strong> foi realizado com sucesso para o dia {dataSelecionada.toLocaleDateString('pt-BR')} às {horarioSelecionado}.
-          </Typography>
-          <Button
-            variant="contained"
-            onClick={() => setOpenModal(false)}
-            sx={{
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              borderRadius: '12px',
-              px: 4,
-              py: 1.2,
-              fontWeight: 600,
-              textTransform: 'none',
-              width: '100%',
-              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)',
-              "&:hover": {
-                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 12px 25px rgba(59, 130, 246, 0.4)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            Entendi
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={() => navigate("/meus-agendamentos")}
-            sx={{
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              borderRadius: '12px',
-              px: 4,
-              py: 1.2,
-              fontWeight: 600,
-              textTransform: 'none',
-              width: '100%',
-              boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)',
-              "&:hover": {
-                background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 12px 25px rgba(59, 130, 246, 0.4)",
-              },
-              transition: "all 0.3s ease",
-            }}
-          >
-            Ver Agendamento
-          </Button>
-        </Box>
-      </Modal>
-    </Box>
+      <Toast {...toast} onClose={hideToast} />
+    </PageLayout>
   );
 }
-
-export default ProfissionalDetalhes;
