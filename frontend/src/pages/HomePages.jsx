@@ -38,7 +38,7 @@ export default function Home() {
       try {
         const token = localStorage.getItem("token");
 
-        const resp = await axios.get("VITE_API_URL=http://localhost:8080/api/profissionais", {
+        const resp = await axios.get(`${import.meta.env.VITE_API_URL}/api/profissionais`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

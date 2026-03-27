@@ -51,7 +51,7 @@ export default function GerenciarProfissionaisPages() {
 
   const fetchProfessionals = async () => {
     try {
-      const res = await axios.get("${API}/api/profissionais");
+      const res = await axios.get(`${API}/api/profissionais`);
       setProfessionals(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       mostrarNotificacao("Erro ao buscar profissionais", "error");
@@ -91,12 +91,12 @@ export default function GerenciarProfissionaisPages() {
     try {
       if (formData.id) {
         await axios.put(
-          `${import.meta.env.production.VITE_API_URL}/api/profissionais/${formData.id}`,
+          `${API}/api/profissionais/${formData.id}`,
           formData
         );
         mostrarNotificacao("Profissional atualizado com sucesso!");
       } else {
-        await axios.post("${import.meta.env.production.VITE_API_URL}/api/profissionais", formData);
+        await axios.post(`${API}/api/profissionais`, formData);
         mostrarNotificacao("Profissional cadastrado com sucesso!");
       }
 
@@ -112,7 +112,7 @@ export default function GerenciarProfissionaisPages() {
     if (!window.confirm("Deseja realmente excluir este profissional? ")) return;
 
     try {
-      await axios.delete(`${import.meta.env.production.VITE_API_URL}/api/profissionais/${id}`);
+      await axios.delete(`${API}/api/profissionais/${id}`);
       mostrarNotificacao("Profissional excluído com sucesso!");
       fetchProfessionals();
     } catch (err) {

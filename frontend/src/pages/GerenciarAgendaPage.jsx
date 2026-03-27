@@ -46,9 +46,8 @@ export default function GerenciarAgendaPage() {
 
   const carregarAgendas = async () => {
     try {
-      const resp = await axios.get(
-        `${API}/api/agendas/profissional`,
-        { id }
+      const resp = await axios.get
+        (`${API}/api/agendas/profissional/${id}`
       );
 
       const agendasComHorarios = resp.data.map((agenda) => ({
@@ -87,7 +86,7 @@ export default function GerenciarAgendaPage() {
 
         mostrarNotificacao("Agenda atualizada!");
       } else {
-        await axios.post(`${import.meta.env.production.VITE_API_URL}/api/agendas/${id}`, req);
+        await axios.post(`${API}/api/agendas/${id}`, req);
         mostrarNotificacao("Agenda salva!");
       }
 

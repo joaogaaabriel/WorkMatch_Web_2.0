@@ -41,7 +41,7 @@ export default function MeusAgendamentosPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const resp = await axios.get("${API}/api/agendamentos/meus", {
+      const resp = await axios.get(`${API}/api/agendamentos/meus`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
