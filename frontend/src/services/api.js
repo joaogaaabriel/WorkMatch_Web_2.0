@@ -56,11 +56,17 @@ export const profissionaisService = {
   buscarPorId: (id) =>
     apiBackend.get(`/api/profissionais/${id}`).then((r) => r.data),
 
+  cadastrar: (data) =>
+    apiBackend.post("/api/profissionais", data).then((r) => r.data),
+
   criar: (data) =>
     apiBackend.post("/api/profissionais", data).then((r) => r.data),
 
   atualizar: (id, data) =>
     apiBackend.put(`/api/profissionais/${id}`, data).then((r) => r.data),
+
+  excluir: (id) =>
+    apiBackend.delete(`/api/profissionais/${id}`),
 
   deletar: (id) =>
     apiBackend.delete(`/api/profissionais/${id}`),
@@ -85,11 +91,19 @@ export const agendaService = {
       .get(`/api/agendas/profissionais/${profissionalId}/agendas`, { params: { data } })
       .then((r) => r.data),
 
+  // GerenciarAgendaPage usa: agendaService.criar(id, payload)
+  criar: (profissionalId, data) =>
+    apiBackend.post(`/api/agendas/${profissionalId}`, data).then((r) => r.data),
+
   criarAgenda: (profissionalId, data) =>
     apiBackend.post(`/api/agendas/${profissionalId}`, data).then((r) => r.data),
 
   buscarAgendas: (profissionalId) =>
     apiBackend.get(`/api/agendas/${profissionalId}`).then((r) => r.data),
+
+  // GerenciarAgendaPage usa: agendaService.atualizarPorId(agendaId, payload)
+  atualizarPorId: (agendaId, data) =>
+    apiBackend.put(`/api/agendas/${agendaId}`, data).then((r) => r.data),
 
   atualizarAgenda: (agendaId, data) =>
     apiBackend.put(`/api/agendas/${agendaId}`, data).then((r) => r.data),
@@ -100,7 +114,36 @@ export const agendaService = {
 
 // ── Usuários ──────────────────────────────────────────────────────────────────
 export const usuariosService = {
-  perfil: (id) =>
+  // Busca dados do usuário logado:
+  // 1) chama /auth/introspect para pegar userId pelo token
+  // 2) chama GET /api/usuarios/{userId}
+  buscarPerfil: async () => {
+    const token = localStorage.getItem("token");
+    const intro = await apiAuth.post("/auth/introspect", { token }).then((r) => r.data);
+    if (!intro.active || !intro.userId) throw new Error("Token inválido");
+    return apiBackend.get(`/api/usuarios/${intro.userId}`).then((r) => r.data);
+  },
+
+  // Atualiza perfil do usuário logado (busca userId via introspect)
+  atualizarPerfil: async (data) => {
+    const token = localStorage.getItem("token");
+    const intro = await apiAuth.post("/auth/introspect", { token }).then((r) => r.data);
+    if (!intro.active || !intro.userId) throw new Error("Token inválido");
+    return apiBackend.put(`/api/usuarios/${intro.userId}`, data).then((r) => r.data);
+  },
+
+  // Altera senha — o backend PUT /api/usuarios/{id} aceita o campo senha
+  // Se o backend não tiver endpoint dedicado, envia a nova senha criptografada
+  // via atualização do usuário (campo senha em plain, backend deve re-encriptar)
+  alterarSenha: async ({ senhaAtual, novaSenha }) => {
+    const token = localStorage.getItem("token");
+    const intro = await apiAuth.post("/auth/introspect", { token }).then((r) => r.data);
+    if (!intro.active || !intro.userId) throw new Error("Token inválido");
+    // Envia para o backend — o controller de alteração de senha deve tratar isso
+    return apiBackend.put(`/api/usuarios/${intro.userId}/senha`, { senhaAtual, novaSenha }).then((r) => r.data);
+  },
+
+  buscarPorId: (id) =>
     apiBackend.get(`/api/usuarios/${id}`).then((r) => r.data),
 
   atualizar: (id, data) =>
@@ -108,6 +151,9 @@ export const usuariosService = {
 
   cadastrar: (data) =>
     apiBackend.post("/api/usuarios", data).then((r) => r.data),
+
+  excluir: (id) =>
+    apiBackend.delete(`/api/usuarios/${id}`),
 };
 
 // ── Validação ─────────────────────────────────────────────────────────────────
