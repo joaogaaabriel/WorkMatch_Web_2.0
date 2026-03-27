@@ -1,235 +1,140 @@
 /**
- * WorkMatch 2.0 — InicioPage (Landing pública)
+ * WorkMatch 2.0 — InicioPage (Landing)
  */
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Btn } from "../components/ui";
 
 const SERVICOS = [
-  { emoji: "🔌", label: "Eletricista" },
-  { emoji: "🔧", label: "Encanador" },
-  { emoji: "🌿", label: "Jardineiro" },
-  { emoji: "🧹", label: "Faxineiro" },
-  { emoji: "🎨", label: "Pintor" },
-  { emoji: "🏗️", label: "Pedreiro" },
-  { emoji: "🪚", label: "Marceneiro" },
-  { emoji: "🧰", label: "Reparos gerais" },
+  { emoji: "🔌", label: "Eletricista" }, { emoji: "🔧", label: "Encanador" },
+  { emoji: "🌿", label: "Jardineiro" }, { emoji: "🧹", label: "Faxineiro" },
+  { emoji: "🎨", label: "Pintor" },     { emoji: "🏗️", label: "Pedreiro" },
+  { emoji: "🪚", label: "Marceneiro" }, { emoji: "🧰", label: "Reparos gerais" },
 ];
 
 const PASSOS = [
-  { n: "1", emoji: "🔍", title: "Encontre o profissional", desc: "Busque por especialidade ou cidade e veja os perfis disponíveis." },
-  { n: "2", emoji: "📅", title: "Escolha data e horário", desc: "Selecione o dia e o horário que melhor se encaixa na sua agenda." },
-  { n: "3", emoji: "✅", title: "Confirme o agendamento", desc: "Com um clique, seu agendamento fica confirmado. Simples assim." },
+  { n: "1", emoji: "🔍", title: "Encontre", desc: "Busque por especialidade ou cidade." },
+  { n: "2", emoji: "📅", title: "Escolha", desc: "Selecione data e horário disponíveis." },
+  { n: "3", emoji: "✅", title: "Confirme", desc: "Agendamento confirmado com um clique." },
 ];
 
 const DIFERENCIAIS = [
-  { emoji: "🛡️", title: "Profissionais verificados", desc: "Todos os profissionais passam por validação de CPF e dados." },
-  { emoji: "⏰", title: "Agenda em tempo real", desc: "Veja horários disponíveis atualizado na hora." },
-  { emoji: "📱", title: "Fácil de usar", desc: "Interface pensada para ser simples e intuitiva para todos." },
-  { emoji: "💬", title: "Suporte dedicado", desc: "Nossa equipe está pronta para ajudar quando você precisar." },
+  { emoji: "🛡️", title: "Profissionais verificados", desc: "CPF e dados validados antes do cadastro." },
+  { emoji: "⏰", title: "Agenda em tempo real", desc: "Horários atualizados na hora." },
+  { emoji: "📱", title: "Fácil de usar", desc: "Pensado para ser simples para todos." },
+  { emoji: "💬", title: "Suporte dedicado", desc: "Equipe pronta para ajudar." },
 ];
 
 export default function InicioPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "var(--font-body)", background: "var(--clr-bg)" }}>
+    <div style={{ fontFamily: "var(--font-body)", background: "var(--clr-bg)" }}>
 
       {/* ── Navbar ── */}
-      <nav style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--clr-border)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 32px",
-        height: 68,
-      }}>
-        <span style={{
-          fontWeight: 900,
-          fontSize: 26,
-          background: "var(--grad-brand)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          letterSpacing: "-0.5px",
-        }}>
-          WorkMatch
-        </span>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Btn variant="ghost" size="sm" onClick={() => navigate("/login")}>Entrar</Btn>
-          <Btn variant="primary" size="sm" onClick={() => navigate("/cadastro")}>Criar conta</Btn>
+      <nav className="wm-header">
+        <div className="wm-header__inner">
+          <div className="wm-header__brand">
+            <div className="wm-header__logo-mark">🔧</div>
+            <div>
+              <div className="wm-header__title">WorkMatch</div>
+              <div className="wm-header__subtitle">Serviços autônomos</div>
+            </div>
+          </div>
+          <div className="wm-header__nav">
+            <button className="wm-nav-link" onClick={() => navigate("/login")}>Entrar</button>
+            <button className="wm-nav-link" onClick={() => navigate("/cadastro")}>Criar conta</button>
+          </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section style={{
-        minHeight: "100vh",
-        background: "var(--grad-hero)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        textAlign: "center",
-        padding: "100px 24px 80px",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        {/* Blob decorativo */}
-        <div style={{
-          position: "absolute",
-          width: 500,
-          height: 500,
-          borderRadius: "50%",
-          background: "rgba(255,255,255,0.05)",
-          top: -100,
-          right: -100,
-        }} />
-        <div style={{
-          position: "absolute",
-          width: 300,
-          height: 300,
-          borderRadius: "50%",
-          background: "rgba(245,158,11,0.12)",
-          bottom: -60,
-          left: -60,
-        }} />
-
-        <div className="animate-fadeUp" style={{ position: "relative", zIndex: 1 }}>
-          <div style={{
-            display: "inline-block",
-            background: "rgba(245,158,11,0.2)",
-            border: "1px solid rgba(245,158,11,0.4)",
-            borderRadius: 99,
-            padding: "6px 20px",
-            fontSize: 14,
-            fontWeight: 700,
-            color: "#fcd34d",
-            marginBottom: 24,
-            letterSpacing: "0.04em",
-          }}>
-            ✨ Plataforma de serviços autônomos
-          </div>
-
-          <h1 style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(38px, 7vw, 72px)",
-            color: "#fff",
-            lineHeight: 1.1,
-            marginBottom: 24,
-            maxWidth: 760,
-          }}>
+      <section className="wm-hero" style={{ paddingTop: 120 }}>
+        <div className="wm-animate-fadeUp" style={{ position: "relative", zIndex: 1 }}>
+          <div className="wm-hero__eyebrow">✨ Plataforma de serviços autônomos</div>
+          <h1 className="wm-hero__title">
             O profissional certo,<br />
-            <em style={{ color: "#fcd34d" }}>no momento certo.</em>
+            <em>no momento certo.</em>
           </h1>
-
-          <p style={{
-            fontSize: "clamp(17px, 2.5vw, 22px)",
-            color: "rgba(255,255,255,0.82)",
-            maxWidth: 560,
-            lineHeight: 1.65,
-            margin: "0 auto 40px",
-            fontWeight: 500,
-          }}>
+          <p className="wm-hero__desc">
             Agende eletricistas, encanadores, jardineiros e muito mais —
-            com facilidade e segurança, diretamente pelo celular ou computador.
+            com facilidade e segurança.
           </p>
-
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-            <Btn size="lg" variant="accent" onClick={() => navigate("/cadastro")}>
+          <div className="wm-hero__actions">
+            <Btn variant="accent" size="lg" onClick={() => navigate("/cadastro")}>
               🚀 Começar agora — é grátis
             </Btn>
-            <Btn size="lg" variant="ghost" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)" }} onClick={() => navigate("/login")}>
+            <button
+              className="wm-nav-link"
+              style={{ color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "var(--r-full)", padding: "0 var(--sp-6)", height: 48 }}
+              onClick={() => navigate("/login")}
+            >
               Já tenho conta
-            </Btn>
+            </button>
+          </div>
+          <div className="wm-hero__stats">
+            {[["500+", "Profissionais"], ["2.4k", "Agendamentos"], ["4.8★", "Avaliação"]].map(([n, l]) => (
+              <div key={l} style={{ textAlign: "center" }}>
+                <div className="wm-hero__stat-val">{n}</div>
+                <div className="wm-hero__stat-label">{l}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ── Serviços ── */}
-      <section style={{ padding: "72px 24px", maxWidth: 1100, margin: "0 auto" }}>
-        <h2 style={{ textAlign: "center", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 900, marginBottom: 8, color: "var(--clr-text)" }}>
+      <section style={{ padding: "72px var(--sp-6)", maxWidth: "var(--container)", margin: "0 auto" }}>
+        <p className="wm-page-hero__eyebrow" style={{ textAlign: "center", marginBottom: "var(--sp-2)" }}>Categorias</p>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,4vw,36px)", color: "var(--clr-navy)", textAlign: "center", marginBottom: "var(--sp-12)", fontWeight: 400 }}>
           Serviços disponíveis
         </h2>
-        <p style={{ textAlign: "center", fontSize: 17, color: "var(--clr-muted)", marginBottom: 48 }}>
-          Profissionais prontos para te atender
-        </p>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-          gap: 16,
-        }}>
-          {SERVICOS.map((s) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px,1fr))", gap: "var(--sp-4)" }}>
+          {SERVICOS.map(s => (
             <div
               key={s.label}
               onClick={() => navigate("/cadastro")}
               style={{
-                background: "var(--clr-surface)",
-                border: "1.5px solid var(--clr-border)",
-                borderRadius: 16,
-                padding: "24px 16px",
-                textAlign: "center",
-                cursor: "pointer",
-                transition: "all .2s",
+                background: "var(--clr-surface)", border: "1.5px solid var(--clr-border)",
+                borderRadius: "var(--r-lg)", padding: "var(--sp-6) var(--sp-4)",
+                textAlign: "center", cursor: "pointer",
+                transition: "all var(--t-base)",
+                boxShadow: "var(--shadow-xs)",
               }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = "var(--clr-primary-lt)";
-                e.currentTarget.style.boxShadow = "var(--shadow-blue)";
-                e.currentTarget.style.transform = "translateY(-4px)";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = "var(--clr-border)";
-                e.currentTarget.style.boxShadow = "none";
-                e.currentTarget.style.transform = "none";
-              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--clr-purple)"; e.currentTarget.style.boxShadow = "var(--shadow-purple)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--clr-border)"; e.currentTarget.style.boxShadow = "var(--shadow-xs)"; e.currentTarget.style.transform = "none"; }}
             >
-              <div style={{ fontSize: 36, marginBottom: 10 }}>{s.emoji}</div>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--clr-text)" }}>{s.label}</p>
+              <div style={{ fontSize: 34, marginBottom: "var(--sp-3)" }}>{s.emoji}</div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--clr-navy)" }}>{s.label}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ── Como funciona ── */}
-      <section style={{ padding: "72px 24px", background: "var(--clr-primary-bg)" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <h2 style={{ textAlign: "center", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 900, marginBottom: 8 }}>
+      <section style={{ padding: "72px var(--sp-6)", background: "var(--clr-purple-pale)" }}>
+        <div style={{ maxWidth: "var(--container)", margin: "0 auto" }}>
+          <p className="wm-page-hero__eyebrow" style={{ textAlign: "center", marginBottom: "var(--sp-2)" }}>Simples assim</p>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,4vw,36px)", color: "var(--clr-navy)", textAlign: "center", marginBottom: "var(--sp-12)", fontWeight: 400 }}>
             Como funciona
           </h2>
-          <p style={{ textAlign: "center", fontSize: 17, color: "var(--clr-muted)", marginBottom: 56 }}>
-            Em 3 passos simples você agenda o serviço que precisa
-          </p>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 28 }}>
-            {PASSOS.map((p) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: "var(--sp-6)" }}>
+            {PASSOS.map(p => (
               <div key={p.n} style={{
-                background: "var(--clr-surface)",
-                borderRadius: 20,
-                padding: "32px 28px",
-                border: "1px solid var(--clr-border)",
-                boxShadow: "var(--shadow-sm)",
-                position: "relative",
+                background: "var(--clr-surface)", borderRadius: "var(--r-lg)",
+                padding: "var(--sp-8) var(--sp-6)", position: "relative",
+                border: "1px solid var(--clr-border)", boxShadow: "var(--shadow-sm)",
               }}>
                 <div style={{
-                  position: "absolute",
-                  top: -14,
-                  left: 24,
-                  background: "var(--clr-primary)",
-                  color: "#fff",
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 15,
-                  fontWeight: 900,
+                  position: "absolute", top: -14, left: 24,
+                  background: "var(--clr-purple)", color: "#fff",
+                  width: 30, height: 30, borderRadius: "var(--r-full)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 900,
                 }}>{p.n}</div>
-                <div style={{ fontSize: 36, marginBottom: 16, marginTop: 8 }}>{p.emoji}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>{p.title}</h3>
-                <p style={{ fontSize: 15, color: "var(--clr-muted)", lineHeight: 1.6 }}>{p.desc}</p>
+                <div style={{ fontSize: 34, marginBottom: "var(--sp-4)", marginTop: "var(--sp-2)" }}>{p.emoji}</div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: "var(--sp-2)", color: "var(--clr-navy)" }}>{p.title}</h3>
+                <p style={{ fontSize: 14, color: "var(--clr-text-mid)", lineHeight: 1.6 }}>{p.desc}</p>
               </div>
             ))}
           </div>
@@ -237,56 +142,36 @@ export default function InicioPage() {
       </section>
 
       {/* ── Diferenciais ── */}
-      <section style={{ padding: "72px 24px", maxWidth: 1100, margin: "0 auto" }}>
-        <h2 style={{ textAlign: "center", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 900, marginBottom: 56 }}>
-          Por que escolher o WorkMatch?
+      <section style={{ padding: "72px var(--sp-6)", maxWidth: "var(--container)", margin: "0 auto" }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,4vw,36px)", color: "var(--clr-navy)", textAlign: "center", marginBottom: "var(--sp-12)", fontWeight: 400 }}>
+          Por que WorkMatch?
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
-          {DIFERENCIAIS.map((d) => (
-            <div key={d.title} style={{
-              background: "var(--clr-surface)",
-              borderRadius: 18,
-              padding: "28px 24px",
-              border: "1px solid var(--clr-border)",
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 14 }}>{d.emoji}</div>
-              <h3 style={{ fontSize: 17, fontWeight: 800, marginBottom: 8 }}>{d.title}</h3>
-              <p style={{ fontSize: 15, color: "var(--clr-muted)", lineHeight: 1.6 }}>{d.desc}</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))", gap: "var(--sp-5)" }}>
+          {DIFERENCIAIS.map(d => (
+            <div key={d.title} style={{ background: "var(--clr-surface)", borderRadius: "var(--r-lg)", padding: "var(--sp-6)", border: "1px solid var(--clr-border)", borderTop: "3px solid var(--clr-purple)" }}>
+              <div style={{ fontSize: 34, marginBottom: "var(--sp-4)" }}>{d.emoji}</div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: "var(--sp-2)", color: "var(--clr-navy)" }}>{d.title}</h3>
+              <p style={{ fontSize: 14, color: "var(--clr-text-mid)", lineHeight: 1.6 }}>{d.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── CTA Final ── */}
-      <section style={{
-        background: "var(--grad-hero)",
-        padding: "72px 24px",
-        textAlign: "center",
-      }}>
-        <h2 style={{
-          fontFamily: "var(--font-display)",
-          fontSize: "clamp(28px, 5vw, 52px)",
-          color: "#fff",
-          marginBottom: 16,
-        }}>
+      {/* ── CTA ── */}
+      <section style={{ background: "linear-gradient(160deg, var(--clr-navy-deep) 0%, var(--clr-purple-mid) 50%, var(--clr-navy-mid) 100%)", padding: "80px var(--sp-6)", textAlign: "center" }}>
+        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,5vw,48px)", color: "#fff", marginBottom: "var(--sp-4)", fontWeight: 400 }}>
           Pronto para começar?
         </h2>
-        <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 18, marginBottom: 40 }}>
-          Crie sua conta gratuitamente e agende seu primeiro serviço hoje.
+        <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 17, marginBottom: "var(--sp-10)" }}>
+          Crie sua conta gratuitamente e agende hoje mesmo.
         </p>
-        <Btn size="lg" variant="accent" onClick={() => navigate("/cadastro")}>
+        <Btn variant="accent" size="lg" onClick={() => navigate("/cadastro")}>
           Criar conta grátis →
         </Btn>
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{
-        background: "#0f172a",
-        color: "rgba(255,255,255,0.6)",
-        textAlign: "center",
-        padding: "24px",
-        fontSize: 14,
-      }}>
+      <footer style={{ background: "var(--clr-navy-deep)", color: "rgba(255,255,255,0.5)", textAlign: "center", padding: "var(--sp-6)", fontSize: 13 }}>
         © {new Date().getFullYear()} WorkMatch — Conectando você ao profissional certo.
       </footer>
     </div>

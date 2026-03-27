@@ -3,69 +3,48 @@
  */
 import React, { useState } from "react";
 import PageLayout from "../components/PageLayout";
-import { Card, Btn, Input, Textarea } from "../components/ui";
-import Toast from "../components/Toast";
-import { useToast } from "../hooks/useToast";
+import { Card, CardHeader, CardBody, CardTitle, Btn, Alert } from "../components/ui";
 
-const FAQ = [
-  {
-    q: "Como faço para agendar um serviço?",
-    a: "Na página inicial, encontre o profissional que deseja, clique no card dele, escolha uma data no calendário, selecione o horário disponível e confirme o agendamento.",
-  },
-  {
-    q: "Posso cancelar um agendamento?",
-    a: "Sim! Acesse 'Meus Agendamentos', encontre o agendamento que deseja cancelar e clique em 'Cancelar agendamento'. O cancelamento é imediato.",
-  },
-  {
-    q: "Os profissionais são verificados?",
-    a: "Sim. Todos os profissionais passam por validação de CPF e dados antes de aparecerem na plataforma.",
-  },
-  {
-    q: "Como altero minha senha?",
-    a: "Acesse 'Meu Perfil' pelo menu lateral, vá à seção 'Alterar senha', informe sua senha atual e a nova senha.",
-  },
-  {
-    q: "Não encontrei um profissional na minha cidade. O que faço?",
-    a: "Use a barra de busca na tela inicial para pesquisar por especialidade. Se ainda assim não encontrar, entre em contato com nosso suporte.",
-  },
+const FAQS = [
+  { q: "Como faço para agendar um serviço?", a: "Acesse a tela 'Início', escolha o profissional desejado, selecione a data e o horário disponíveis, e confirme o agendamento." },
+  { q: "Como cancelo um agendamento?", a: "Vá em 'Meus Agendamentos', localize o agendamento futuro e clique em 'Cancelar'. Agendamentos passados não podem ser cancelados." },
+  { q: "Posso alterar a data de um agendamento?", a: "No momento, não é possível alterar diretamente. Cancele o agendamento atual e realize um novo com a data desejada." },
+  { q: "Como atualizo meus dados pessoais?", a: "Acesse 'Meu Perfil' no menu lateral e edite as informações desejadas." },
+  { q: "Esqueci minha senha. O que faço?", a: "Na tela de login, clique em 'Esqueci minha senha' para receber instruções por e-mail. Se não encontrar, verifique sua pasta de spam." },
+  { q: "Os profissionais são verificados?", a: "Sim. Todos os profissionais cadastrados têm CPF validado pela equipe WorkMatch antes de aparecerem na plataforma." },
+];
+
+const CANAIS = [
+  { emoji: "📧", title: "E-mail", desc: "Resposta em até 24h", info: "suporte@workmatch.com.br", btn: "Enviar e-mail" },
+  { emoji: "💬", title: "WhatsApp", desc: "Segunda a sexta, 8h–18h", info: "(62) 99999-9999", btn: "Abrir WhatsApp" },
+  { emoji: "📱", title: "Telefone", desc: "Segunda a sexta, 8h–18h", info: "(62) 3333-4444", btn: "Ligar agora" },
 ];
 
 function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
   return (
     <div style={{
-      border:"1.5px solid var(--clr-border)",
-      borderRadius:14,
-      overflow:"hidden",
-      transition:"border-color .15s",
+      border: "1px solid var(--clr-border)", borderRadius: "var(--r-md)",
+      overflow: "hidden", transition: "box-shadow var(--t-base)",
+      boxShadow: open ? "var(--shadow-sm)" : "none",
     }}>
       <button
         onClick={() => setOpen(!open)}
         style={{
-          width:"100%", textAlign:"left",
-          padding:"18px 20px",
-          background:open ? "var(--clr-primary-bg)" : "var(--clr-surface)",
-          border:"none", cursor:"pointer",
-          display:"flex", justifyContent:"space-between", alignItems:"center",
-          gap:12,
-          fontFamily:"var(--font-body)",
-          transition:"background .15s",
+          width: "100%", display: "flex", justifyContent: "space-between",
+          alignItems: "center", padding: "var(--sp-5) var(--sp-5)",
+          background: open ? "var(--clr-purple-pale)" : "var(--clr-surface)",
+          border: "none", cursor: "pointer", fontFamily: "var(--font-body)",
+          fontSize: 15, fontWeight: 600, color: open ? "var(--clr-purple)" : "var(--clr-navy)",
+          textAlign: "left", gap: "var(--sp-4)", transition: "background var(--t-fast)",
         }}
       >
-        <span style={{ fontSize:16, fontWeight:700, color:"var(--clr-text)", lineHeight:1.4 }}>{q}</span>
-        <span style={{
-          fontSize:20, color:"var(--clr-primary)", flexShrink:0,
-          transform: open ? "rotate(180deg)" : "none",
-          transition:"transform .2s",
-        }}>▾</span>
+        <span>{q}</span>
+        <span style={{ fontSize: 20, flexShrink: 0, transform: open ? "rotate(45deg)" : "none", transition: "transform var(--t-base)", color: "var(--clr-purple)" }}>+</span>
       </button>
       {open && (
-        <div style={{
-          padding:"16px 20px",
-          borderTop:"1px solid var(--clr-border)",
-          background:"var(--clr-bg)",
-        }}>
-          <p style={{ color:"var(--clr-muted)", fontSize:15, lineHeight:1.7, fontWeight:500 }}>{a}</p>
+        <div style={{ padding: "var(--sp-2) var(--sp-5) var(--sp-5)", color: "var(--clr-text-mid)", lineHeight: 1.7, fontSize: 14, background: "var(--clr-surface)" }}>
+          {a}
         </div>
       )}
     </div>
@@ -73,104 +52,116 @@ function FaqItem({ q, a }) {
 }
 
 export default function SuporteClientePage() {
-  const { toast, showToast, hideToast } = useToast();
-  const [form, setForm] = useState({ assunto:"", mensagem:"" });
-  const [sending, setSending] = useState(false);
+  const [formEnviado, setFormEnviado] = useState(false);
+  const [form, setForm] = useState({ assunto: "", mensagem: "" });
 
-  function handleChange(e) {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  }
-
-  function handleSubmit(e) {
+  function handleEnviar(e) {
     e.preventDefault();
-    if (!form.assunto.trim() || !form.mensagem.trim()) {
-      showToast("Preencha assunto e mensagem.", "warning");
-      return;
-    }
-    setSending(true);
-    // Simulação de envio (endpoint não existe no backend)
-    setTimeout(() => {
-      showToast("Mensagem enviada! Nossa equipe entrará em contato em breve. 📬", "success");
-      setForm({ assunto:"", mensagem:"" });
-      setSending(false);
-    }, 1200);
+    setFormEnviado(true);
+    setForm({ assunto: "", mensagem: "" });
+    setTimeout(() => setFormEnviado(false), 5000);
   }
 
   return (
-    <PageLayout title="Central de Suporte" subtitle="Como podemos te ajudar?" backPath="/home">
+    <PageLayout title="Suporte" subtitle="Estamos aqui para ajudar" backPath="/home">
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))", gap:28 }}>
-
-        {/* ── FAQ ── */}
-        <div>
-          <h2 style={{ fontSize:20, fontWeight:800, marginBottom:16, color:"var(--clr-text)" }}>
-            ❓ Perguntas frequentes
-          </h2>
-          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-            {FAQ.map((item, i) => (
-              <FaqItem key={i} {...item} />
-            ))}
+      {/* Canais */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "var(--sp-5)" }}>
+        {CANAIS.map(c => (
+          <div key={c.title} style={{
+            background: "var(--clr-surface)", borderRadius: "var(--r-lg)",
+            border: "1px solid var(--clr-border)", borderTop: "3px solid var(--clr-purple)",
+            padding: "var(--sp-6)", textAlign: "center",
+            boxShadow: "var(--shadow-sm)",
+          }}>
+            <div style={{ fontSize: 36, marginBottom: "var(--sp-4)" }}>{c.emoji}</div>
+            <p style={{ fontWeight: 700, color: "var(--clr-navy)", marginBottom: "var(--sp-1)" }}>{c.title}</p>
+            <p style={{ fontSize: 13, color: "var(--clr-text-light)", marginBottom: "var(--sp-3)" }}>{c.desc}</p>
+            <p style={{ fontWeight: 600, color: "var(--clr-purple)", fontSize: 14, marginBottom: "var(--sp-5)" }}>{c.info}</p>
+            <Btn variant="secondary" size="sm" fullWidth>{c.btn}</Btn>
           </div>
-        </div>
-
-        {/* ── Formulário de contato ── */}
-        <div>
-          <h2 style={{ fontSize:20, fontWeight:800, marginBottom:16, color:"var(--clr-text)" }}>
-            ✉️ Fale conosco
-          </h2>
-
-          <Card style={{ padding:28 }}>
-            <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:18 }}>
-              <Input
-                label="Assunto"
-                name="assunto"
-                value={form.assunto}
-                onChange={handleChange}
-                placeholder="Descreva brevemente o seu problema"
-                icon="📝"
-                required
-              />
-              <Textarea
-                label="Mensagem"
-                name="mensagem"
-                value={form.mensagem}
-                onChange={handleChange}
-                placeholder="Descreva em detalhes como podemos te ajudar..."
-                rows={6}
-                required
-              />
-              <Btn type="submit" fullWidth size="lg" loading={sending}>
-                📬 Enviar mensagem
-              </Btn>
-            </form>
-          </Card>
-
-          {/* Canais alternativos */}
-          <div style={{ marginTop:20, display:"flex", flexDirection:"column", gap:12 }}>
-            {[
-              { emoji:"📧", label:"E-mail", value:"suporte@workmatch.com.br" },
-              { emoji:"📱", label:"WhatsApp", value:"(62) 99999-0000" },
-              { emoji:"🕐", label:"Horário de atendimento", value:"Seg–Sex, 8h às 18h" },
-            ].map(({ emoji, label, value }) => (
-              <div key={label} style={{
-                display:"flex", alignItems:"center", gap:14,
-                padding:"14px 18px",
-                background:"var(--clr-surface)",
-                border:"1px solid var(--clr-border)",
-                borderRadius:12,
-              }}>
-                <span style={{ fontSize:22, flexShrink:0 }}>{emoji}</span>
-                <div>
-                  <p style={{ fontSize:13, color:"var(--clr-muted)", fontWeight:600, marginBottom:2 }}>{label}</p>
-                  <p style={{ fontSize:15, color:"var(--clr-text)", fontWeight:700 }}>{value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
 
-      <Toast {...toast} onClose={hideToast} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: "var(--sp-6)", alignItems: "start" }}>
+
+        {/* FAQ */}
+        <Card>
+          <CardHeader><CardTitle>❓ Perguntas frequentes</CardTitle></CardHeader>
+          <CardBody style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)" }}>
+            {FAQS.map((item, i) => <FaqItem key={i} {...item} />)}
+          </CardBody>
+        </Card>
+
+        {/* Formulário de contato */}
+        <Card accent="purple">
+          <CardHeader><CardTitle>💌 Enviar mensagem</CardTitle></CardHeader>
+          <CardBody>
+            {formEnviado ? (
+              <div style={{ textAlign: "center", padding: "var(--sp-8) 0" }}>
+                <div style={{ fontSize: 52, marginBottom: "var(--sp-4)" }}>✅</div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", color: "var(--clr-navy)", marginBottom: "var(--sp-3)", fontWeight: 400 }}>
+                  Mensagem enviada!
+                </h3>
+                <p style={{ color: "var(--clr-text-light)", fontSize: 14, lineHeight: 1.6 }}>
+                  Nossa equipe responderá em até 24 horas no seu e-mail cadastrado.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleEnviar} style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+                <Alert variant="purple" emoji="ℹ️">
+                  Nossa equipe responde em até 24 horas nos dias úteis.
+                </Alert>
+
+                <div className="wm-form-group">
+                  <label className="wm-label">Assunto <span className="wm-label__required">*</span></label>
+                  <select className="wm-input" value={form.assunto} onChange={e => setForm(p => ({ ...p, assunto: e.target.value }))} required>
+                    <option value="">Selecione um assunto...</option>
+                    <option>Problema com agendamento</option>
+                    <option>Dúvida sobre o sistema</option>
+                    <option>Reclamação sobre profissional</option>
+                    <option>Sugestão de melhoria</option>
+                    <option>Outro</option>
+                  </select>
+                </div>
+
+                <div className="wm-form-group">
+                  <label className="wm-label">Mensagem <span className="wm-label__required">*</span></label>
+                  <textarea
+                    className="wm-input" rows={5} required
+                    value={form.mensagem} onChange={e => setForm(p => ({ ...p, mensagem: e.target.value }))}
+                    placeholder="Descreva sua dúvida ou problema com o máximo de detalhes possível..."
+                  />
+                </div>
+
+                <div className="wm-form-actions">
+                  <Btn type="submit" fullWidth disabled={!form.assunto || !form.mensagem}>
+                    📤 Enviar mensagem
+                  </Btn>
+                </div>
+              </form>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Horário de atendimento */}
+      <Card>
+        <CardBody>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-5)", flexWrap: "wrap" }}>
+            <div style={{ fontSize: 36 }}>🕐</div>
+            <div>
+              <p style={{ fontWeight: 700, color: "var(--clr-navy)", marginBottom: "var(--sp-1)" }}>Horário de atendimento</p>
+              <p style={{ color: "var(--clr-text-mid)", fontSize: 14 }}>Segunda a sexta — 8h às 18h</p>
+            </div>
+            <div style={{ marginLeft: "auto" }}>
+              <p style={{ fontSize: 12, color: "var(--clr-text-light)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Tempo médio de resposta</p>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", color: "var(--clr-purple)" }}>2–4 horas</p>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
     </PageLayout>
   );
 }
