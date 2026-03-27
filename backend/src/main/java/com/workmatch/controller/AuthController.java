@@ -1,55 +1,37 @@
 package com.workmatch.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * BUG 009 CORRIGIDO
+ *
+ * O endpoint /api/login do backend principal gerava um token UUID aleatório
+ * mas NÃO persistia esse token em nenhuma tabela — tornando-o inútil,
+ * pois o auth-serve não reconheceria esse token em /auth/introspect.
+ *
+ * SOLUÇÃO: Este controller agora retorna um erro claro orientando
+ * o cliente a usar o auth-serve correto (porta 8082 / VITE_API_URL1).
+ *
+ * O login REAL é feito exclusivamente no auth-serve:
+ *   POST http://auth-serve:8082/api/login
+ *
+ * Esse controller existe apenas para evitar 404 caso alguém
+ * chame /api/login no backend por engano, e orientar corretamente.
+ */
 @RestController
 @RequestMapping("/api")
 @CrossOrigin("*")
 public class AuthController {
 
-    private final AuthenticationManager authManager;
-
-    public AuthController(AuthenticationManager authManager) {
-        this.authManager = authManager;
-    }
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        try {
-            if (body == null || !body.containsKey("email") || !body.containsKey("senha")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Email e senha são obrigatórios"));
-            }
-
-            String email = body.get("email");
-            String senha = body.get("senha");
-
-            authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, senha)
-            );
-
-            // Aqui você pode gerar token UUID ou JWT
-            String token = java.util.UUID.randomUUID().toString().replace("-", "");
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "OK",
-                    "email", email,
-                    "token", token
-            ));
-
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Email ou senha inválidos"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erro interno ao autenticar", "details", e.getMessage()));
-        }
+        return ResponseEntity.status(301).body(Map.of(
+            "error", "Endpoint de login incorreto.",
+            "info",  "Use o auth-serve para autenticação: POST /api/login na porta 8082.",
+            "docs",  "O token gerado aqui não é validado pelo sistema. Use VITE_API_URL1."
+        ));
     }
 }
