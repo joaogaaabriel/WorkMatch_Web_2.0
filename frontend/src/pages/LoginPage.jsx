@@ -35,7 +35,7 @@ import logo from "../assets/Logo.png";
       e.preventDefault();
 
       try {
-        const response = await axios.post("${API}/api/login", {
+        const response = await axios.post(`${API}/api/login`, {
           email: email.includes("@") ? email : null,
           login: !email.includes("@") ? email : null,
           senha: password,
