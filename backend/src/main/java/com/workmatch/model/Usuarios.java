@@ -49,12 +49,6 @@ public class Usuarios {
     @Column(name = "role", nullable = false, length = 20)
     private String role = "USER"; // valor padrão
 
-
-
-    // =====================
-    // Getters e Setters
-    // =====================
-
     public UUID getId() {
         return id;
     }
