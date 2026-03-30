@@ -19,7 +19,6 @@ import jakarta.transaction.Transactional;
 
     boolean existsByProfissionalIdAndDataAndHorario(UUID profissionalId, LocalDate data, LocalTime horario);
 
-    
     List<Agendamentos> findByProfissionalIdAndData(UUID profissionalId, LocalDate data);
 
     List<Agendamentos> findByUsuarioId(UUID usuarioId);
