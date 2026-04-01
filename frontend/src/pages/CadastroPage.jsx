@@ -50,19 +50,34 @@ export default function CadastroPage() {
   }
 
   async function handleNext() {
-    const errs = validateStep1();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setLoading(true);
-    try {
-      const cpfLimpo = form.cpf.replace(/\D/g, "");
-      const { valido } = await validacaoService.validarCpf(cpfLimpo);
-      if (!valido) { setErrors({ cpf: "CPF inválido ou não reconhecido." }); return; }
-      const existe = await validacaoService.cpfExiste(cpfLimpo);
-      if (existe) { setErrors({ cpf: "CPF já cadastrado." }); return; }
-      setStep(2);
-    } catch { showToast("Erro ao validar CPF.", "error"); }
-    finally { setLoading(false); }
+  const errs = validateStep1();
+  if (Object.keys(errs).length) { setErrors(errs); return; }
+
+  setLoading(true);
+
+  try {
+    const cpfLimpo = form.cpf.replace(/\D/g, "");
+
+    const { valido } = await validacaoService.validarCpf(cpfLimpo);
+    if (!valido) {
+      setErrors({ cpf: "CPF inválido ou não reconhecido." });
+      return;
+    }
+
+    const { existe } = await validacaoService.cpfExiste(cpfLimpo);
+    if (existe) {
+      setErrors({ cpf: "CPF já cadastrado." });
+      return;
+    }
+
+    setStep(2);
+
+  } catch {
+    showToast("Erro ao validar CPF.", "error");
+  } finally {
+    setLoading(false);
   }
+}
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -72,7 +87,7 @@ export default function CadastroPage() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const emailExiste = await validacaoService.emailExiste(form.email);
+      const { emailExiste } = await validacaoService.emailExiste(form.email);
       if (emailExiste) { setErrors({ email: "E-mail já cadastrado." }); return; }
       await usuariosService.cadastrar({ ...form, cpf: form.cpf.replace(/\D/g, ""), telefone: form.telefone.replace(/\D/g, "") });
       showToast("Conta criada com sucesso! 🎉", "success");
