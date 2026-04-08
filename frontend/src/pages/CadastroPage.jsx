@@ -66,7 +66,7 @@ export default function CadastroPage() {
 
     const { existe } = await validacaoService.cpfExiste(cpfLimpo);
     if (existe) {
-      setErrors({ cpf: "CPF já cadastrado." });
+      setErrors({ cpf: "CPF inválido ou não reconhecido." });
       return;
     }
 
@@ -87,11 +87,22 @@ export default function CadastroPage() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
     try {
-      const { emailExiste } = await validacaoService.emailExiste(form.email);
-      if (emailExiste) { setErrors({ email: "E-mail já cadastrado." }); return; }
-      await usuariosService.cadastrar({ ...form, cpf: form.cpf.replace(/\D/g, ""), telefone: form.telefone.replace(/\D/g, "") });
-      showToast("Conta criada com sucesso! 🎉", "success");
-      setTimeout(() => navigate("/login"), 1800);
+      const response = await fetch("/api/usuarios", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      setErrors(data); 
+      return;
+    }
+
+    console.log("Usuário criado:", data.id);
+    showToast("Conta criada com sucesso! 🎉", "success");
+    setTimeout(() => navigate("/login"), 1800);
     } catch (err) {
       showToast(err.response?.data?.message || "Erro ao criar conta.", "error");
     } finally { setLoading(false); }
