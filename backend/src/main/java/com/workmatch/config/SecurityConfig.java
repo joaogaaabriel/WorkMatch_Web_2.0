@@ -78,6 +78,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
 
+                .requestMatchers("/api/**").permitAll()
+
                 // ── Rotas totalmente públicas ──────────────────────────────
                 // OPTIONS sempre liberado (preflight CORS)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

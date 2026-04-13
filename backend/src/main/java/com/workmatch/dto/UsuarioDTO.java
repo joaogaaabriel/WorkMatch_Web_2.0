@@ -4,6 +4,7 @@ import com.workmatch.validadores.CPFValido;
 import com.workmatch.validadores.EmailValido;
 import com.workmatch.validadores.TelefoneValido;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +24,10 @@ public class UsuarioDTO {
     @NotBlank(message = "Telefone é obrigatório")
     private String telefone;
 
+    @NotBlank(message = "Senha é obrigatória")
+    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+    private String senha;
+    
     public CharSequence getSenha() {
         throw new UnsupportedOperationException("Unimplemented method 'getSenha'");
     }
