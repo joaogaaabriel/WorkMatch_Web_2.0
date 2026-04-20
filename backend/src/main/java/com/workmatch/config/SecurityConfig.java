@@ -21,30 +21,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * BUG 017 CORRIGIDO
- *
- * ANTES: anyRequest().permitAll() — todos os endpoints eram públicos,
- * qualquer pessoa sem token podia acessar dados de usuários, profissionais,
- * agendamentos, etc.
- *
- * SOLUÇÃO: Proteção por camadas:
- * - Rotas públicas explícitas (cadastro, validação, listagem de profissionais)
- * - Rotas autenticadas via token Bearer validado no auth-serve
- * - CORS restrito às origens conhecidas (frontend web)
- *
- * NOTA: A autenticação real é feita via auth-serve (token opaco UUID).
- * O backend valida o token chamando /auth/introspect no auth-serve.
- * O Spring Security aqui funciona como camada extra de proteção de rota.
- */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
 
-    // Origens permitidas — configure via variável de ambiente
-    // Ex: ALLOWED_ORIGINS=https://workmatch.vercel.app,https://workmatch-pi.onrender.com
     @Value("${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}")
     private String allowedOriginsRaw;
 
@@ -77,52 +59,33 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-
-                .requestMatchers("/api/**").permitAll()
-
-                // ── Rotas totalmente públicas ──────────────────────────────
-                // OPTIONS sempre liberado (preflight CORS)
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Cadastro de usuário
                 .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
-
-                // Validações de CPF e e-mail no cadastro
-                .requestMatchers("/api/validar/**").permitAll()
-
-                // Login (redirecionamento — o real é no auth-serve)
                 .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
 
-                // Listagem pública de profissionais (vitrine)
+                .requestMatchers("/api/validar/**").permitAll()
+
                 .requestMatchers(HttpMethod.GET, "/api/profissionais").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/profissionais/{id}").permitAll()
-
-                // Horários disponíveis (necessário para tela de agendamento)
                 .requestMatchers(HttpMethod.GET, "/api/profissionais/{id}/agendas").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/agendas/profissionais/**").permitAll()
 
-                // Arquivos estáticos do frontend (quando servido pelo Spring Boot)
                 .requestMatchers("/", "/index.html", "/static/**", "/assets/**",
                                  "/*.js", "/*.css", "/*.ico", "/*.png").permitAll()
 
-                // ── Rotas protegidas — requerem token Bearer válido ────────
-                // Agendamentos
                 .requestMatchers("/api/agendamentos/**").authenticated()
 
-                // CRUD de profissionais (somente ADMIN usa, via auth-serve)
                 .requestMatchers(HttpMethod.POST,   "/api/profissionais").authenticated()
                 .requestMatchers(HttpMethod.PUT,    "/api/profissionais/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/profissionais/**").authenticated()
 
-                // Agendas (ADMIN)
                 .requestMatchers(HttpMethod.POST,   "/api/agendas/**").authenticated()
                 .requestMatchers(HttpMethod.PUT,    "/api/agendas/**").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/agendas/**").authenticated()
 
-                // Usuários — leitura e atualização de perfil
                 .requestMatchers("/api/usuarios/**").authenticated()
 
-                // Qualquer outra rota não mapeada acima → bloqueada
                 .anyRequest().denyAll()
             );
 
@@ -133,19 +96,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // BUG 017 FIX: origens restritas — não mais "*"
-        // Em desenvolvimento aceita localhost; em produção define via env
         List<String> origins = List.of(allowedOriginsRaw.split(","));
         config.setAllowedOrigins(origins);
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
-
-        // false porque usamos "*" no origins — se mudar para domínio específico,
-        // pode setar true para cookies/credenciais
-        config.setAllowCredentials(false);
-
-        config.setMaxAge(3600L); // cache preflight por 1 hora
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
