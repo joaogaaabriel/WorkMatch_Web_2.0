@@ -5,7 +5,7 @@ import jakarta.validation.Payload;
 
 import java.lang.annotation.*;
 
-@Constraint(validatedBy = EmailValidator.class)
+@Constraint(validatedBy = EmailValidador.class)
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EmailValido {

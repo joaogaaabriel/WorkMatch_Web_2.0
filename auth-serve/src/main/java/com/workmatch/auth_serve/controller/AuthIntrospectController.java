@@ -9,7 +9,6 @@
     import org.springframework.web.bind.annotation.PostMapping;
     import org.springframework.web.bind.annotation.RequestHeader;
     import org.springframework.web.bind.annotation.RequestMapping;
-    import org.springframework.web.bind.annotation.RequestParam;
     import org.springframework.web.bind.annotation.RestController;
 
     import com.workmatch.auth_serve.model.UserToken;
@@ -26,12 +25,12 @@
         
         @PostMapping("/introspect")
         public ResponseEntity<Map<String, Object>> introspect(
-                @RequestParam(value = "token", required = false) String token,
                 @RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
 
             Map<String, Object> response = new HashMap<>();
 
-            // Se veio pelo header, extrai o token removendo "Bearer "
+            String token = null;
+
             if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
                 token = authorizationHeader.substring(7);
             }

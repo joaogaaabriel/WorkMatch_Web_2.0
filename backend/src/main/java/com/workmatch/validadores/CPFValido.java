@@ -4,7 +4,7 @@ import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.*;
 
-@Constraint(validatedBy = CpfValidator.class)
+@Constraint(validatedBy = CpfValidador.class)
 @Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CPFValido {

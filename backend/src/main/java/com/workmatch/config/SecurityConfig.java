@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -20,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -53,41 +53,28 @@ public class SecurityConfig {
     }
 
     @Bean
+        public AuthTokenFilter authTokenFilter() {
+            return new AuthTokenFilter();
+        }
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        .csrf(csrf -> csrf.disable())
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .authenticationProvider(authenticationProvider())
+        .addFilterBefore(authTokenFilter(), UsernamePasswordAuthenticationFilter.class)
+        .authorizeHttpRequests(auth -> auth
 
-                .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+            .requestMatchers("/auth/**").permitAll()
+            .requestMatchers("/api/usuarios").permitAll()
 
-                .requestMatchers("/api/validar/**").permitAll()
+            .requestMatchers("/api/profissionais/**").authenticated()
+            .requestMatchers("/api/agendamentos/**").authenticated()
 
-                .requestMatchers(HttpMethod.GET, "/api/profissionais").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/profissionais/{id}").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/profissionais/{id}/agendas").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/agendas/profissionais/**").permitAll()
-
-                .requestMatchers("/", "/index.html", "/static/**", "/assets/**",
-                                 "/*.js", "/*.css", "/*.ico", "/*.png").permitAll()
-
-                .requestMatchers("/api/agendamentos/**").authenticated()
-
-                .requestMatchers(HttpMethod.POST,   "/api/profissionais").authenticated()
-                .requestMatchers(HttpMethod.PUT,    "/api/profissionais/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/profissionais/**").authenticated()
-
-                .requestMatchers(HttpMethod.POST,   "/api/agendas/**").authenticated()
-                .requestMatchers(HttpMethod.PUT,    "/api/agendas/**").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/api/agendas/**").authenticated()
-
-                .requestMatchers("/api/usuarios/**").authenticated()
-
-                .anyRequest().denyAll()
-            );
+            .anyRequest().authenticated()
+        );
 
         return http.build();
     }

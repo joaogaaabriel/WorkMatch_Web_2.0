@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.util.Set;
 
-public class TelefoneValidator implements ConstraintValidator<TelefoneValido, String> {
+public class TelefoneValidador implements ConstraintValidator<TelefoneValido, String> {
 
     // DDDs válidos no Brasil
     private static final Set<String> DDD_VALIDOS = Set.of(

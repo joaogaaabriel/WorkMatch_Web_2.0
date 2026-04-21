@@ -3,7 +3,7 @@ package com.workmatch.validadores;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class CpfValidator implements ConstraintValidator<CPFValido, String> {
+public class CpfValidador implements ConstraintValidator<CPFValido, String> {
 
     @Override
     public boolean isValid(String cpf, ConstraintValidatorContext context) {
