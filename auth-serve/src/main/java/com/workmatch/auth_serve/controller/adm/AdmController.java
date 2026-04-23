@@ -2,93 +2,90 @@ package com.workmatch.auth_serve.controller.adm;
 
 import com.workmatch.auth_serve.model.User;
 import com.workmatch.auth_serve.repository.UserRepository;
+
 import java.time.LocalDate;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-/**
- * BUG 010 CORRIGIDO
- *
- * ANTES: /admin/create-admin era totalmente público — qualquer pessoa
- * podia fazer uma requisição POST e criar um usuário ADMIN.
- *
- * SOLUÇÃO: O endpoint agora exige um header "X-Admin-Secret" com uma
- * chave definida via variável de ambiente ADMIN_SECRET_KEY.
- *
- * Configure no Render/Railway/docker-compose:
- *   ADMIN_SECRET_KEY=sua_chave_super_secreta_aqui
- *
- * Sem esse header correto, a requisição retorna 403.
- */
 @RestController
 @RequestMapping("/admin")
-@CrossOrigin("*")
 public class AdmController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder encoder;
 
-    @Autowired
-    private PasswordEncoder encoder;
-
-    // Lida da variável de ambiente ADMIN_SECRET_KEY
-    // Valor padrão vazio força configuração obrigatória em produção
-    @Value("${ADMIN_SECRET_KEY:}")
+    @Value("${ADMIN_SECRET_KEY:WorkMatchAdminSecret}")
     private String adminSecretKey;
 
-    // =========================
-    // 🔹 CADASTRAR ADMIN (protegido)
-    // =========================
+    public AdmController(UserRepository userRepository, PasswordEncoder encoder) {
+        this.userRepository = userRepository;
+        this.encoder = encoder;
+    }
+
     @PostMapping("/create-admin")
     public ResponseEntity<?> createAdmin(
             @RequestBody User novo,
             @RequestHeader(value = "X-Admin-Secret", required = false) String secret) {
 
-        // BUG 010 FIX: validar chave secreta antes de qualquer operação
         if (adminSecretKey == null || adminSecretKey.isBlank()) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(Map.of("error", "Criação de admin não configurada no servidor. Defina ADMIN_SECRET_KEY."));
+                    .body(Map.of("error", "ADMIN_SECRET_KEY não configurado no servidor"));
         }
 
         if (secret == null || !adminSecretKey.equals(secret)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Acesso negado. Chave de administrador inválida ou ausente."));
+                    .body(Map.of("error", "Acesso negado"));
         }
 
         try {
-            if (novo == null || novo.getLogin() == null || novo.getSenha() == null) {
+
+            if (novo.getLogin() == null || novo.getLogin().isBlank()
+                    || novo.getSenha() == null || novo.getSenha().isBlank()) {
                 return ResponseEntity.badRequest()
                         .body(Map.of("error", "Login e senha são obrigatórios"));
             }
 
             if (userRepository.existsByLogin(novo.getLogin())) {
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Login já está sendo usado"));
+                        .body(Map.of("error", "Login já está em uso"));
+            }
+
+            if (userRepository.existsByCpf(novo.getCpf())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "CPF já cadastrado"));
+            }
+
+            if (userRepository.existsByEmail(novo.getEmail())) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "E-mail já cadastrado"));
+            }
+
+            if (userRepository.existsByRole("ADMIN")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Já existe um administrador cadastrado"));
             }
 
             novo.setSenha(encoder.encode(novo.getSenha()));
-
-            if (novo.getDataNascimento() == null) {
-                novo.setDataNascimento(LocalDate.now());
-            }
-
+            novo.setDataNascimento(novo.getDataNascimento() != null ? novo.getDataNascimento() : LocalDate.now());
             novo.setRole("ADMIN");
+
             userRepository.save(novo);
 
-            return ResponseEntity.ok(Map.of(
-                    "message", "Administrador criado com sucesso!",
-                    "login", novo.getLogin()
-            ));
+            return ResponseEntity.ok(Map.of("message", "Administrador criado com sucesso"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
-                            "error", "Erro interno ao criar administrador",
+                            "error", "Erro interno",
                             "details", e.getMessage()
                     ));
         }

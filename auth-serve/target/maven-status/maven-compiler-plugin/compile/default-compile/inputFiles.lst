@@ -3,6 +3,7 @@
 /app/src/main/java/com/workmatch/auth_serve/controller/AuthController.java
 /app/src/main/java/com/workmatch/auth_serve/controller/AuthIntrospectController.java
 /app/src/main/java/com/workmatch/auth_serve/controller/adm/AdmController.java
+/app/src/main/java/com/workmatch/auth_serve/dto/AdminDTO.java
 /app/src/main/java/com/workmatch/auth_serve/model/LoginRequest.java
 /app/src/main/java/com/workmatch/auth_serve/model/User.java
 /app/src/main/java/com/workmatch/auth_serve/model/UserToken.java

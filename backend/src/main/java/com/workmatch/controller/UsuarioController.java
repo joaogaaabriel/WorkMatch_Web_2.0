@@ -25,8 +25,10 @@ public class UsuarioController {
     public ResponseEntity<?> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
         Usuarios usuario = service.cadastrar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
-                "success", true,
-                "id", usuario.getId()
+                "success", "Usuário cadastrado com sucesso",
+                "usuario", Map.of(
+                        "nome", usuario.getNome()
+                )
         ));
     }
 }

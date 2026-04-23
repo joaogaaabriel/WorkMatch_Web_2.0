@@ -46,11 +46,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        // 🔥 Busca no banco (TOKEN OPACO)
         UserToken t = tokenRepository.findByToken(token);
 
         if (t != null
-                && !t.isExpired()
+                && !t.isActive()
                 && t.getExpiresAt().isAfter(LocalDateTime.now())) {
 
             User user = userRepository.findById(

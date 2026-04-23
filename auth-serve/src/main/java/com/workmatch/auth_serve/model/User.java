@@ -1,63 +1,61 @@
 package com.workmatch.auth_serve.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
-@Table(name = "usuarios")
+@Table(name = "Usuarios")
+@Getter
+@Setter
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
-    private String cpf;
-
-    @Column(nullable = false, unique = true)
-    private String email;
-
+    @Column(name = "nome", nullable = false, length = 100)
     private String nome;
-    private String telefone;
 
-    @Column(nullable = false)
-    private String senha;
-
-    @Column(unique = true)
-    private String login;
-
-    @Column(nullable = false)
-    private String role;
+    @Column(name = "cpf", unique = true, nullable = false, length = 14)
+    private String cpf;
 
     @Column(name = "data_nascimento", nullable = false)
     private LocalDate dataNascimento;
 
-    // GETTERS E SETTERS
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    @Column(name = "telefone", nullable = false, length = 20)
+    private String telefone;
 
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
+    @Column(name = "endereco", nullable = false, length = 150)
+    private String endereco;
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @Column(name = "email", unique = true, nullable = false, length = 150)
+    private String email;
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    @Column(name = "login", unique = true, nullable = false, length = 100)
+    private String login;
 
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
+    @Column(name = "senha", nullable = false, length = 255)
+    private String senha;
 
-    public String getSenha() { return senha; }
-    public void setSenha(String senha) { this.senha = senha; }
+    @Column(name = "role", nullable = false, length = 20)
+    private String role = "ADMIN";
 
-    public String getLogin() { return login; }
-    public void setLogin(String login) { this.login = login; }
+    @Column(name = "data_cadastro", nullable = false)
+    private LocalDateTime dataCadastro;
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public LocalDate getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
+    @PrePersist
+    public void prePersist() {
+        this.dataCadastro = LocalDateTime.now();
+    }
 }

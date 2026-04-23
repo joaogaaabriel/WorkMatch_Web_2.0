@@ -19,22 +19,23 @@ public class UserToken {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private String userId;
 
-    @Column(name = "token", nullable = false)
+    @Column(name = "token")
     private String token;
 
-    @Column(name = "expired", nullable = false)
-    private boolean expired = false;
+    @Column(name = "active")
+    private boolean active = false;
 
-    @Column(name = "role", nullable = false)
+    @Column(name = "role")
     private String role; 
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "expires_at")
+    @Column(name = "expired_at")
     private LocalDateTime expiresAt;
+
     
 }

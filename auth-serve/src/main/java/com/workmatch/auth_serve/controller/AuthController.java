@@ -30,9 +30,9 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest login) {
         try {
+
             String credencial;
 
-            // Prioriza email, mas usa login se vier
             if (login.getEmail() != null && !login.getEmail().isBlank()) {
                 credencial = login.getEmail().trim();
             } else if (login.getLogin() != null && !login.getLogin().isBlank()) {
@@ -49,7 +49,6 @@ public class AuthController {
                         .body(Map.of("error", "Senha é obrigatória"));
             }
 
-            // Procurar usuário por email OU login
             User user = userRepository.findByEmail(credencial)
                     .or(() -> userRepository.findByLogin(credencial))
                     .orElse(null);
@@ -64,27 +63,26 @@ public class AuthController {
                         .body(Map.of("error", "Senha incorreta"));
             }
 
-            String token = UUID.randomUUID().toString().replace("-", "");
-
-            // Expira os antigos
             List<UserToken> tokens = tokenRepository.findByUserId(user.getId().toString());
-            tokens.forEach(t -> t.setExpired(true));
+            tokens.forEach(t -> t.setActive(false));
             tokenRepository.saveAll(tokens);
 
+            String token = UUID.randomUUID().toString().replace("-", "");
+
             LocalDateTime agora = LocalDateTime.now();
+
             UserToken novoToken = new UserToken();
             novoToken.setUserId(user.getId().toString());
             novoToken.setToken(token);
             novoToken.setRole(user.getRole());
             novoToken.setCreatedAt(agora);
             novoToken.setExpiresAt(agora.plusHours(2));
-            novoToken.setExpired(false);
+            novoToken.setActive(true);
 
             tokenRepository.save(novoToken);
 
             return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "nome", user.getNome(),
+                    "active", true,
                     "role", user.getRole()
             ));
 

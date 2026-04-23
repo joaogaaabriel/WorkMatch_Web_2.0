@@ -26,10 +26,10 @@
 /app/src/main/java/com/workmatch/service/UsuarioService.java
 /app/src/main/java/com/workmatch/service/ValidationService.java
 /app/src/main/java/com/workmatch/validadores/CPFValido.java
-/app/src/main/java/com/workmatch/validadores/CpfValidator.java
-/app/src/main/java/com/workmatch/validadores/EmailValidator.java
+/app/src/main/java/com/workmatch/validadores/CpfValidador.java
+/app/src/main/java/com/workmatch/validadores/EmailValidador.java
 /app/src/main/java/com/workmatch/validadores/EmailValido.java
-/app/src/main/java/com/workmatch/validadores/TelefoneValidator.java
+/app/src/main/java/com/workmatch/validadores/TelefoneValidador.java
 /app/src/main/java/com/workmatch/validadores/TelefoneValido.java
 /app/src/main/java/com/workmatch/validadores/Validator.java
 /app/src/main/java/com/workmatch/validadores/ValidatorFactory.java
