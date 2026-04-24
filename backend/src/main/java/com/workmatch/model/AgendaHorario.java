@@ -22,4 +22,6 @@ public class AgendaHorario {
 
     @Column(nullable = false, length = 5)
     private String horario;
+
+    
 }

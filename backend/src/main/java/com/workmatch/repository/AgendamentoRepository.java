@@ -1,7 +1,6 @@
 package com.workmatch.repository;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,7 +14,7 @@ import com.workmatch.model.Agendamento;
 @Repository
 public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID> {
 
-    boolean existsByProfissionalIdAndDataAndHorario(UUID profissionalId, LocalDate data, LocalTime horario);
+    boolean existsByProfissionalIdAndDataAndHorario(UUID profissionalId, LocalDate data, String horario);
 
     List<Agendamento> findByProfissionalIdAndData(UUID profissionalId, LocalDate data);
 

@@ -1,4 +1,4 @@
-package com.workmatch.dtq;
+package com.workmatch.dto;
 
 import java.time.LocalDate;
 

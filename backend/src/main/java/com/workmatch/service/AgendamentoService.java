@@ -3,11 +3,13 @@ package com.workmatch.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.workmatch.dto.request.AgendamentoRequest;
+import com.workmatch.dto.response.AgendamentoResponse;
 import com.workmatch.model.Agendamento;
 
 public interface AgendamentoService {
 
-    Agendamento criar(Agendamento agendamento);
+    AgendamentoResponse criar(AgendamentoRequest request);
 
     List<Agendamento> meusAgendamentos(UUID usuarioId);
 

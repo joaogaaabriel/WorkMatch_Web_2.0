@@ -1,5 +1,7 @@
 package com.workmatch.controller;
 
+import com.workmatch.dto.request.ProfissionalRequest;
+import com.workmatch.dto.response.ProfissionalResponse;
 import com.workmatch.model.Profissional;
 import com.workmatch.repository.AgendamentoRepository;
 import com.workmatch.repository.ProfissionalRepository;
@@ -44,19 +46,44 @@ public class ProfissionalController {
     }
 
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody Profissional profissional) {
-        if (profissional == null || profissional.getCpf() == null || profissional.getNome() == null) {
+    public ResponseEntity<?> criar(@RequestBody ProfissionalRequest request) {
+
+        if (request.getCpf() == null || request.getNome() == null) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "CPF e nome são obrigatórios"));
         }
 
-        if (profissionalRepository.existsByCpf(profissional.getCpf())) {
+        if (profissionalRepository.existsByCpf(request.getCpf())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "CPF já cadastrado"));
         }
 
+        Profissional profissional = new Profissional();
+
+        profissional.setNome(request.getNome());
+        profissional.setCpf(request.getCpf());
+        profissional.setEmail(request.getEmail());
+        profissional.setTelefone(request.getTelefone());
+        profissional.setDescricao(request.getDescricao());
+        profissional.setExperienciaAnos(request.getExperienciaAnos());
+        profissional.setCidade(request.getCidade());
+        profissional.setEstado(request.getEstado());
+        profissional.setEndereco(request.getEndereco());
+
         Profissional salvo = profissionalRepository.save(profissional);
-        return ResponseEntity.status(HttpStatus.CREATED).body(salvo);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ProfissionalResponse(
+                        salvo.getId(),
+                        salvo.getNome(),
+                        salvo.getEmail(),
+                        salvo.getTelefone(),
+                        salvo.getDescricao(),
+                        salvo.getExperienciaAnos(),
+                        salvo.getCidade(),
+                        salvo.getEstado(),
+                        salvo.getEndereco()
+                ));
     }
 
     @PutMapping("/{id}")

@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.workmatch.dto.request.AgendamentoRequest;
 import com.workmatch.model.Agendamento;
 import com.workmatch.service.AgendamentoService;
 
@@ -20,8 +21,8 @@ public class AgendamentoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> criar(@RequestBody Agendamento agendamento) {
-        return ResponseEntity.ok(agendamentoService.criar(agendamento));
+    public ResponseEntity<?> criar(@RequestBody AgendamentoRequest request) {
+        return ResponseEntity.ok(agendamentoService.criar(request));
     }
 
     @GetMapping("/usuario/{usuarioId}")

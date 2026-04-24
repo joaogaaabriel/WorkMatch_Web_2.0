@@ -1,4 +1,4 @@
-package com.workmatch.dtq.response;
+package com.workmatch.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,6 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AgendaResponse {
 
+    
     private final UUID agendaId;
     private final LocalDate data;
     private final List<String> horarios;

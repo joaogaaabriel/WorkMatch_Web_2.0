@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -32,7 +31,7 @@ public class Agendamento {
 
     @JsonFormat(pattern = "HH:mm")
     @Column(nullable = false)
-    private LocalTime horario;
+    private String horario;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

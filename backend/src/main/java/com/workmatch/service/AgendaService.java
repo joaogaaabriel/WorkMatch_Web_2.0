@@ -2,8 +2,8 @@ package com.workmatch.service;
 
 import java.util.UUID;
 
-import com.workmatch.dtq.request.AgendaRequest;
-import com.workmatch.dtq.response.AgendaResponse;
+import com.workmatch.dto.request.AgendaRequest;
+import com.workmatch.dto.response.AgendaResponse;
 
 public interface AgendaService {
 

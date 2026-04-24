@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.workmatch.dto.request.AgendamentoRequest;
+import com.workmatch.dto.response.AgendamentoResponse;
 import com.workmatch.model.Agendamento;
 import com.workmatch.model.Profissional;
 import com.workmatch.repository.AgendamentoRepository;
@@ -23,29 +25,37 @@ public class AgendamentoServiceImpl implements AgendamentoService {
         this.profissionalRepository = profissionalRepository;
     }
 
-    @Override
-    public Agendamento criar(Agendamento agendamento) {
+    public AgendamentoResponse criar(AgendamentoRequest request) {
 
-        Profissional profissional = profissionalRepository.findById(
-                agendamento.getProfissional().getId()
-        ).orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
-
-        agendamento.setProfissional(profissional);
+        Profissional profissional = profissionalRepository.findById(request.getProfissionalId())
+                .orElseThrow(() -> new RuntimeException("Profissional não encontrado"));
 
         boolean existe = agendamentoRepository
                 .existsByProfissionalIdAndDataAndHorario(
                         profissional.getId(),
-                        agendamento.getData(),
-                        agendamento.getHorario()
+                        request.getData(),
+                        request.getHorario()
                 );
 
         if (existe) {
             throw new RuntimeException("Horário já ocupado");
         }
 
-        return agendamentoRepository.save(agendamento);
-    }
+        Agendamento agendamento = new Agendamento();
+        agendamento.setData(request.getData());
+        agendamento.setHorario(request.getHorario());
+        agendamento.setProfissional(profissional);
 
+        Agendamento salvo = agendamentoRepository.save(agendamento);
+
+        return new AgendamentoResponse(
+                salvo.getId(),
+                salvo.getUsuario().getId(),
+                salvo.getProfissional().getId(),
+                salvo.getData(),
+                salvo.getHorario()
+        );
+    }
     @Override
     public List<Agendamento> meusAgendamentos(UUID usuarioId) {
         return agendamentoRepository.findByUsuarioId(usuarioId);
@@ -63,4 +73,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
         agendamentoRepository.delete(agendamento);
     }
+
+
 }

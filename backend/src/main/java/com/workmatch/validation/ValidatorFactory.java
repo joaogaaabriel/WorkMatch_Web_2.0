@@ -7,11 +7,7 @@
 
         private static final Map<String, Validator<String>> validators = new HashMap<>();
 
-        static {
-            validators.put("cpf", (Validator<String>) new CpfValidator());
-            validators.put("email", (Validator<String>) new EmailValidator());
-        }
-
+     
         public static Validator<String> getValidator(String tipo) {
             return validators.get(tipo);
         }
