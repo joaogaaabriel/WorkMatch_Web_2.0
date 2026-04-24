@@ -1,4 +1,4 @@
-package com.workmatch.dto.request;
+package com.workmatch.dtq.request;
 
 import java.util.List;
 

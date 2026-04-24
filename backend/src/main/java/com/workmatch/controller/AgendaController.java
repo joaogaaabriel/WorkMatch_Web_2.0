@@ -1,7 +1,7 @@
 package com.workmatch.controller;
 
-import com.workmatch.dto.request.AgendaRequest;
-import com.workmatch.dto.response.AgendaResponse;
+import com.workmatch.dtq.request.AgendaRequest;
+import com.workmatch.dtq.response.AgendaResponse;
 import com.workmatch.model.AgendaHorario;
 import com.workmatch.service.AgendaService;
 import com.workmatch.repository.AgendaRepository;

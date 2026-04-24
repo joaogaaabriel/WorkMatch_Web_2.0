@@ -1,4 +1,4 @@
-package com.workmatch.dto;
+package com.workmatch.dtq;
 
 public class UsuarioLoginDTO {
     private String email;

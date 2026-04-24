@@ -1,4 +1,4 @@
-package com.workmatch.config;
+package com.workmatch.security;
 
 import java.util.List;
 

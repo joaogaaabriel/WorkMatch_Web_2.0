@@ -1,4 +1,4 @@
-package com.workmatch.dto.response;
+package com.workmatch.dtq.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

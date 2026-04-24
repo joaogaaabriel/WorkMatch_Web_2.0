@@ -1,6 +1,6 @@
 package com.workmatch.service;
 
-import com.workmatch.dto.UsuarioDTO;
+import com.workmatch.dtq.UsuarioDTO;
 import com.workmatch.validation.Validator;
 import com.workmatch.validation.ValidatorFactory;
 

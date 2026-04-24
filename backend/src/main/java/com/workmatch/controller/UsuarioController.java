@@ -1,6 +1,6 @@
 package com.workmatch.controller;
 
-import com.workmatch.dto.UsuarioDTO;
+import com.workmatch.dtq.UsuarioDTO;
 import com.workmatch.model.Usuario;
 import com.workmatch.service.UsuarioService;
 

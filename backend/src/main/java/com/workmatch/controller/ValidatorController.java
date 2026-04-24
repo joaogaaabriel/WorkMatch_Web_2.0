@@ -1,7 +1,8 @@
 package com.workmatch.controller;
 
+import com.workmatch.dtq.UsuarioDTO;
 import com.workmatch.service.ValidationService;
-import com.workmatch.dto.UsuarioDTO;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -12,8 +13,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/validar")
 @CrossOrigin(origins = "*")
-public class ValidacaoController {
-    public ValidacaoController(ValidationService validationService) {
+public class ValidatorController {
+    public ValidatorController(ValidationService validationService) {
     }
 
     @PostMapping("/{tipo}")
