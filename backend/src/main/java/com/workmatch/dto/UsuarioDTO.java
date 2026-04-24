@@ -2,9 +2,9 @@ package com.workmatch.dto;
 
 import java.time.LocalDate;
 
-import com.workmatch.validadores.CPFValido;
-import com.workmatch.validadores.EmailValido;
-import com.workmatch.validadores.TelefoneValido;
+import com.workmatch.validation.CpfValida;
+import com.workmatch.validation.EmailValida;
+import com.workmatch.validation.TelefoneValida;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,14 +20,14 @@ public class UsuarioDTO {
     @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
     private String nome;
 
-    @CPFValido
+    @CpfValida
     @NotBlank(message = "CPF é obrigatório")
     private String cpf;
 
     @NotNull(message = "Data de nascimento é obrigatória")
     private LocalDate dataNascimento;
 
-    @TelefoneValido
+    @TelefoneValida
     @NotBlank(message = "Telefone é obrigatório")
     private String telefone;
 
@@ -35,7 +35,7 @@ public class UsuarioDTO {
     @Size(max = 150, message = "Endereço deve ter no máximo 150 caracteres")
     private String endereco;
 
-    @EmailValido
+    @EmailValida
     @NotBlank(message = "E-mail é obrigatório")
     private String email;
 

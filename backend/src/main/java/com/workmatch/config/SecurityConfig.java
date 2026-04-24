@@ -34,13 +34,7 @@ public class SecurityConfig {
             )
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-
-                .requestMatchers("/api/usuarios").permitAll()
-                .requestMatchers("/api/login").permitAll()
-                
-                .requestMatchers("/api/auth/**").permitAll()
-
-                .anyRequest().authenticated()
+                    .anyRequest().permitAll()
             );
 
         return http.build();

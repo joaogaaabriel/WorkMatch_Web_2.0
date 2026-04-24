@@ -1,7 +1,7 @@
 package com.workmatch.service;
 
 import com.workmatch.dto.UsuarioDTO;
-import com.workmatch.model.Usuarios;
+import com.workmatch.model.Usuario;
 import com.workmatch.repository.UsuariosRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,7 +18,7 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Usuarios cadastrar(UsuarioDTO dto) {
+    public Usuario cadastrar(UsuarioDTO dto) {
 
         if (repository.existsByCpf(dto.getCpf())) {
             throw new IllegalArgumentException("CPF já cadastrado");
@@ -32,7 +32,7 @@ public class UsuarioService {
             throw new IllegalArgumentException("Login já está em uso");
         }
 
-        Usuarios usuario = new Usuarios();
+        Usuario usuario = new Usuario();
         usuario.setNome(dto.getNome());
         usuario.setCpf(dto.getCpf());
         usuario.setDataNascimento(dto.getDataNascimento());

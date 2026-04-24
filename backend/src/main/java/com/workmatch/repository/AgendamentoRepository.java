@@ -10,16 +10,16 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.workmatch.model.Agendamentos;
+import com.workmatch.model.Agendamento;
 
 @Repository
-public interface AgendamentoRepository extends JpaRepository<Agendamentos, UUID> {
+public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID> {
 
     boolean existsByProfissionalIdAndDataAndHorario(UUID profissionalId, LocalDate data, LocalTime horario);
 
-    List<Agendamentos> findByProfissionalIdAndData(UUID profissionalId, LocalDate data);
+    List<Agendamento> findByProfissionalIdAndData(UUID profissionalId, LocalDate data);
 
-    List<Agendamentos> findByUsuarioId(UUID usuarioId);
+    List<Agendamento> findByUsuarioId(UUID usuarioId);
 
     @Modifying
     @Transactional

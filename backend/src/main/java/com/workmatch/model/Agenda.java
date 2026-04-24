@@ -1,34 +1,31 @@
 package com.workmatch.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Table(name = "agendas")
+@Getter
+@Setter
 public class Agenda {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "profissional_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profissional_id", nullable = false)
     private Profissional profissional;
 
+    @Column(nullable = false)
     private LocalDate data;
 
     @OneToMany(mappedBy = "agenda", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AgendaHorarios> horarios;
+    private List<AgendaHorario> horarios;
 
-
-    // GETTERS/SETTERS
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public Profissional getProfissional() { return profissional; }
-    public void setProfissional(Profissional profissional) { this.profissional = profissional; }
-
-    public LocalDate getData() { return data; }
-    public void setData(LocalDate data) { this.data = data; }
 }

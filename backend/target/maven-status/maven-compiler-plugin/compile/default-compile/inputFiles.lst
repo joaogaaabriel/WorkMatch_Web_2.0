@@ -8,6 +8,7 @@
 /app/src/main/java/com/workmatch/controller/UsuarioController.java
 /app/src/main/java/com/workmatch/controller/ValidacaoController.java
 /app/src/main/java/com/workmatch/dto/AgendaRequest.java
+/app/src/main/java/com/workmatch/dto/AgendaResponse.java
 /app/src/main/java/com/workmatch/dto/UsuarioDTO.java
 /app/src/main/java/com/workmatch/dto/UsuarioLoginDTO.java
 /app/src/main/java/com/workmatch/exception/AgendamentoException.java
@@ -22,9 +23,12 @@
 /app/src/main/java/com/workmatch/repository/AgendamentoRepository.java
 /app/src/main/java/com/workmatch/repository/ProfissionalRepository.java
 /app/src/main/java/com/workmatch/repository/UsuariosRepository.java
+/app/src/main/java/com/workmatch/service/AgendaService.java
+/app/src/main/java/com/workmatch/service/AgendamentoService.java
 /app/src/main/java/com/workmatch/service/CustomUserDetailsService.java
 /app/src/main/java/com/workmatch/service/UsuarioService.java
 /app/src/main/java/com/workmatch/service/ValidationService.java
+/app/src/main/java/com/workmatch/service/impl/AgendaServiceImpl.java
 /app/src/main/java/com/workmatch/validadores/CPFValido.java
 /app/src/main/java/com/workmatch/validadores/CpfValidador.java
 /app/src/main/java/com/workmatch/validadores/EmailValidador.java

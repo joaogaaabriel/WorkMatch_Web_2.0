@@ -1,7 +1,7 @@
 package com.workmatch.controller;
 
 import com.workmatch.dto.UsuarioDTO;
-import com.workmatch.model.Usuarios;
+import com.workmatch.model.Usuario;
 import com.workmatch.service.UsuarioService;
 
 import jakarta.validation.Valid;
@@ -23,7 +23,7 @@ public class UsuarioController {
 
     @PostMapping
     public ResponseEntity<?> cadastrar(@RequestBody @Valid UsuarioDTO dto) {
-        Usuarios usuario = service.cadastrar(dto);
+        Usuario usuario = service.cadastrar(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "success", "Usuário cadastrado com sucesso",
                 "usuario", Map.of(

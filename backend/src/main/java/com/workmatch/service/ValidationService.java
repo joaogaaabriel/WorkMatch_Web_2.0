@@ -1,8 +1,9 @@
 package com.workmatch.service;
 
 import com.workmatch.dto.UsuarioDTO;
-import com.workmatch.validadores.Validator;
-import com.workmatch.validadores.ValidatorFactory;
+import com.workmatch.validation.Validator;
+import com.workmatch.validation.ValidatorFactory;
+
 import org.springframework.stereotype.Service;
 
 @Service

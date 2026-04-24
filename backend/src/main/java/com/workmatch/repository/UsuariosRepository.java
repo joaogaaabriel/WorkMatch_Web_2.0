@@ -5,16 +5,16 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.workmatch.model.Usuarios;
+import com.workmatch.model.Usuario;
 
 @Repository
-public interface UsuariosRepository extends JpaRepository<Usuarios, UUID> {
+public interface UsuariosRepository extends JpaRepository<Usuario, UUID> {
 
     boolean existsByEmail(String email);
 
     boolean existsByCpf(String cpf);
 
-    Optional<Usuarios> findByEmail(String email);
+    Optional<Usuario> findByEmail(String email);
 
     boolean existsByLogin(String login);
 }
