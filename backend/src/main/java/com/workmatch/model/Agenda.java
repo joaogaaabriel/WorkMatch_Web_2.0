@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,7 +22,7 @@ public class Agenda {
     private Profissional profissional;
 
     @Column(nullable = false)
-    private LocalDate data;
+    private String data;
 
     @OneToMany(mappedBy = "agenda", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AgendaHorario> horarios;

@@ -2,7 +2,7 @@ package com.workmatch.service;
 
 import com.workmatch.dto.UsuarioDTO;
 import com.workmatch.model.Usuario;
-import com.workmatch.repository.UsuariosRepository;
+import com.workmatch.repository.UserRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class UsuarioService {
 
-    private final UsuariosRepository repository;
+    private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UsuariosRepository repository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UserRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
     }

@@ -23,7 +23,7 @@
 /app/src/main/java/com/workmatch/repository/AgendaRepository.java
 /app/src/main/java/com/workmatch/repository/AgendamentoRepository.java
 /app/src/main/java/com/workmatch/repository/ProfissionalRepository.java
-/app/src/main/java/com/workmatch/repository/UsuarioRepository.java
+/app/src/main/java/com/workmatch/repository/UserRepository.java
 /app/src/main/java/com/workmatch/security/CustomUserDetailsService.java
 /app/src/main/java/com/workmatch/security/SecurityConfig.java
 /app/src/main/java/com/workmatch/service/AgendaService.java

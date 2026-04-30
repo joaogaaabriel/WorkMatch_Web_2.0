@@ -1,7 +1,8 @@
 package com.workmatch.security;
 
 import com.workmatch.model.Usuario;
-import com.workmatch.repository.UsuariosRepository;
+import com.workmatch.repository.UserRepository;
+
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,9 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UsuariosRepository repository;
+    private final UserRepository repository;
 
-    public CustomUserDetailsService(UsuariosRepository repository) {
+    public CustomUserDetailsService(UserRepository repository) {
         this.repository = repository;
     }
 
