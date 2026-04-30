@@ -1,0 +1,21 @@
+server:
+  port: 8083
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: agendas
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/agendas/**
+
+        - id: profissionais
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/profissionais/**
+
+        - id: agendamentos
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/agendamentos/**

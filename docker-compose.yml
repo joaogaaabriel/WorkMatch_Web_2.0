@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.8'
 
 services:
   db:
@@ -64,6 +64,21 @@ services:
     networks:
       - workmatch-net
 
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile.dev
+    container_name: workmatch-gateway
+    environment:
+      SERVER_PORT: 8083
+    ports:
+      - "8083:8083"
+    depends_on:
+      - backend
+      - auth-serve
+    networks:
+      - workmatch-net
+
   frontend:
     build:
       context: ./frontend
@@ -72,13 +87,13 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - REACT_APP_API_URL=http://backend:8081
+      - REACT_APP_API_URL=http://gateway:8083
       - CHOKIDAR_USEPOLLING=true
     volumes:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - backend
+      - gateway
     networks:
       - workmatch-net
 
