@@ -1,25 +1,17 @@
 package com.workmatch.dto.request;
 
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDate;
 import java.util.List;
 
+@Getter
+@Setter
 public class AgendaRequest {
 
-    private String data;
+    private LocalDate data;
     private List<String> horarios;
 
-    public String getData() {
-        return data;
-    }
 
-    public void setData(String data) {
-        this.data = data;
-    }
-
-    public List<String> getHorarios() {
-        return horarios;
-    }
-
-    public void setHorarios(List<String> horarios) {
-        this.horarios = horarios;
-    }
 }

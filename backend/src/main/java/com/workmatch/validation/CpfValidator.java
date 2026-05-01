@@ -9,8 +9,6 @@ public class CpfValidator implements ConstraintValidator<CpfValida, String> {
     public boolean isValid(String cpf, ConstraintValidatorContext context) {
         if (cpf == null) return false;
 
-        cpf = cpf.replaceAll("[^0-9]", "");
-
         if (cpf.length() != 11 || cpf.matches("(\\d)\\1{10}")) return false;
 
         try {

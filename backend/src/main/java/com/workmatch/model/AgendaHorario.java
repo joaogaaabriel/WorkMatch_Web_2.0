@@ -7,7 +7,6 @@ import lombok.Setter;
 import java.util.UUID;
 
 @Entity
-@Table(name = "agenda_horarios")
 @Getter
 @Setter
 public class AgendaHorario {
@@ -17,7 +16,7 @@ public class AgendaHorario {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agenda_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Agenda agenda;
 
     @Column(nullable = false, length = 5)

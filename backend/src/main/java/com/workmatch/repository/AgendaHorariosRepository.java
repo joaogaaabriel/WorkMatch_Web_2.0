@@ -12,6 +12,4 @@ public interface AgendaHorariosRepository extends JpaRepository<AgendaHorario, U
     List<AgendaHorario> findByAgendaId(UUID agendaId);
 
     void deleteByAgendaId(UUID agendaId);
-
-    void deleteByAgendaIdAndHorario(UUID agendaId, String horario);
 }

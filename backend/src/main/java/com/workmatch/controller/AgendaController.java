@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
@@ -75,14 +74,13 @@ public class AgendaController {
             dataSelecionada = LocalDate.parse(data);
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Data inválida (YYYY-MM-DD)"));
+                    .body(Map.of());
         }
 
         var agenda = agendaRepo.findByProfissionalIdAndData(id, dataSelecionada);
 
         if (agenda.isEmpty()) {
             return ResponseEntity.ok(Map.of(
-                    "horarios", List.of(),
                     "ocupados", List.of()
             ));
         }
@@ -115,7 +113,7 @@ public class AgendaController {
 
         if (novos == null || novos.isEmpty()) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Lista vazia"));
+                    .body(Map.of());
         }
 
         var agenda = agendaRepo.findById(agendaId);

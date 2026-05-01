@@ -37,17 +37,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     @Transactional
     public AgendamentoResponse criar(AgendamentoRequest request) {
 
-        if (request.getUsuarioId() == null) {
-            throw new RuntimeException("Usuário é obrigatório");
-        }
-
-        if (request.getProfissionalId() == null) {
-            throw new RuntimeException("Profissional é obrigatório");
-        }
-
-        if (request.getData() == null || request.getHorario() == null) {
-            throw new RuntimeException("Data e horário são obrigatórios");
-        }
 
         Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
@@ -57,16 +46,7 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
         String horario = request.getHorario();
 
-        boolean existe = agendamentoRepository
-                .existsByProfissionalIdAndDataAndHorario(
-                        profissional.getId(),
-                        request.getData(),
-                        horario
-                );
 
-        if (existe) {
-            throw new RuntimeException("Horário já ocupado");
-        }
 
         Agendamento agendamento = new Agendamento();
         agendamento.setUsuario(usuario);
@@ -87,9 +67,6 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
     @Override
     public List<Agendamento> meusAgendamentos(UUID usuarioId) {
-        if (usuarioId == null) {
-            throw new RuntimeException("Usuário inválido");
-        }
         return agendamentoRepository.findByUsuarioId(usuarioId);
     }
 
@@ -97,16 +74,12 @@ public class AgendamentoServiceImpl implements AgendamentoService {
     @Transactional
     public void deletar(UUID id, UUID usuarioId) {
 
-        if (id == null || usuarioId == null) {
-            throw new RuntimeException("Dados inválidos");
-        }
+
 
         Agendamento agendamento = agendamentoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Agendamento não encontrado"));
 
-        if (!agendamento.getUsuario().getId().equals(usuarioId)) {
-            throw new RuntimeException("Sem permissão para excluir este agendamento");
-        }
+
 
         agendamentoRepository.delete(agendamento);
     }

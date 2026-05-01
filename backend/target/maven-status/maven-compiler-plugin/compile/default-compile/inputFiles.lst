@@ -37,5 +37,3 @@
 /app/src/main/java/com/workmatch/validation/EmailValidator.java
 /app/src/main/java/com/workmatch/validation/TelefoneValida.java
 /app/src/main/java/com/workmatch/validation/TelefoneValidator.java
-/app/src/main/java/com/workmatch/validation/Validator.java
-/app/src/main/java/com/workmatch/validation/ValidatorFactory.java

@@ -9,7 +9,6 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "agendamentos")
 @Getter
 @Setter
 public class Agendamento {
@@ -19,11 +18,11 @@ public class Agendamento {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profissional_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Profissional profissional;
 
     @Column(nullable = false)

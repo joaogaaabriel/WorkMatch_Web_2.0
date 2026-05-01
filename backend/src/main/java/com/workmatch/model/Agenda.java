@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "agendas")
 @Getter
 @Setter
 public class Agenda {
@@ -18,11 +18,11 @@ public class Agenda {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profissional_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Profissional profissional;
 
     @Column(nullable = false)
-    private String data;
+    private LocalDate data;
 
     @OneToMany(mappedBy = "agenda", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AgendaHorario> horarios;

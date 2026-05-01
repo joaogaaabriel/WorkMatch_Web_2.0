@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,11 +40,12 @@ public class AgendaServiceImpl implements AgendaService {
         Profissional profissional = profissionalRepo.findById(profissionalId)
                 .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
 
-        LocalDate data = LocalDate.parse(request.getData());
+        LocalDate data = request.getData();
 
         if (agendaRepo.existsByProfissionalIdAndData(profissionalId, data)) {
             throw new IllegalArgumentException("Já existe uma agenda para este profissional nesta data");
         }
+
 
         Agenda agenda = new Agenda();
         agenda.setData(data);
@@ -61,9 +61,11 @@ public class AgendaServiceImpl implements AgendaService {
     @Transactional
     public void atualizar(UUID agendaId, AgendaRequest request) {
         Agenda agenda = agendaRepo.findById(agendaId)
-                .orElseThrow(() -> new IllegalArgumentException("Agenda não encontrada"));
+                .orElseThrow();
 
-        agenda.setData(LocalDate.parse(request.getData()));
+
+        LocalDate data = request.getData();
+        agenda.setData(data);
         agendaRepo.save(agenda);
 
         horariosRepo.deleteByAgendaId(agendaId);
@@ -91,7 +93,9 @@ public class AgendaServiceImpl implements AgendaService {
                 .map(AgendaHorario::getHorario)
                 .toList();
 
-        return new AgendaResponse(agenda.getId(), agenda.getData(), horarios);
+        LocalDate data = agenda.getData();
+
+        return new AgendaResponse(agenda.getId(), data, horarios);
     }
 
     private void salvarHorarios(Agenda agenda, List<String> horarios) {

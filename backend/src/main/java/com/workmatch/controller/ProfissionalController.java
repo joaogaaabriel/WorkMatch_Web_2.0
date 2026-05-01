@@ -40,7 +40,7 @@ public class ProfissionalController {
         Profissional profissional = profissionalRepository.findById(id).orElse(null);
         if (profissional == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Profissional não encontrado"));
+                    .body(Map.of());
         }
         return ResponseEntity.ok(profissional);
     }
@@ -50,12 +50,12 @@ public class ProfissionalController {
 
         if (request.getCpf() == null || request.getNome() == null) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "CPF e nome são obrigatórios"));
+                    .body(Map.of());
         }
 
         if (profissionalRepository.existsByCpf(request.getCpf())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "CPF já cadastrado"));
+                    .body(Map.of());
         }
 
         Profissional profissional = new Profissional();
@@ -89,27 +89,26 @@ public class ProfissionalController {
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizar(
             @PathVariable UUID id,
-            @RequestBody Profissional profissionalAtualizado) {
+            @RequestBody Profissional profissionalActualization) {
 
-        if (profissionalAtualizado == null || profissionalAtualizado.getNome() == null) {
+        if (profissionalActualization == null || profissionalActualization.getNome() == null) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Nome é obrigatório"));
+                    .body(Map.of());
         }
 
         Profissional profissional = profissionalRepository.findById(id).orElse(null);
         if (profissional == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Profissional não encontrado"));
+                    .body(Map.of());
         }
 
-        profissional.setNome(profissionalAtualizado.getNome());
-        profissional.setEmail(profissionalAtualizado.getEmail());
-        profissional.setTelefone(profissionalAtualizado.getTelefone());
-        profissional.setDescricao(profissionalAtualizado.getDescricao());
-        profissional.setExperienciaAnos(profissionalAtualizado.getExperienciaAnos());
-        profissional.setCidade(profissionalAtualizado.getCidade());
-        profissional.setEstado(profissionalAtualizado.getEstado());
-        profissional.setEndereco(profissionalAtualizado.getEndereco());
+        profissional.setNome(profissionalActualization.getNome());
+        profissional.setTelefone(profissionalActualization.getTelefone());
+        profissional.setDescricao(profissionalActualization.getDescricao());
+        profissional.setExperienciaAnos(profissionalActualization.getExperienciaAnos());
+        profissional.setCidade(profissionalActualization.getCidade());
+        profissional.setEstado(profissionalActualization.getEstado());
+        profissional.setEndereco(profissionalActualization.getEndereco());
 
         return ResponseEntity.ok(profissionalRepository.save(profissional));
     }

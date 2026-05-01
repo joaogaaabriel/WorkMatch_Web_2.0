@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "profissionais")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
@@ -32,7 +31,6 @@ public class Profissional {
     @Column(nullable = false, length = 20)
     private String telefone;
 
-    @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
     @Column(length = 100)
@@ -41,7 +39,6 @@ public class Profissional {
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
-    @Column(name = "experiencia_anos")
     private Integer experienciaAnos;
 
     @Column(length = 100)
