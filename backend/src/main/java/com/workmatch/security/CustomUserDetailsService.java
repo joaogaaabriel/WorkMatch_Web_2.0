@@ -1,7 +1,7 @@
 package com.workmatch.security;
 
 import com.workmatch.model.Usuario;
-import com.workmatch.repository.UserRepository;
+import com.workmatch.repository.UsuarioRepository;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository repository;
+    private final UsuarioRepository repository;
 
-    public CustomUserDetailsService(UserRepository repository) {
+    public CustomUserDetailsService(UsuarioRepository repository) {
         this.repository = repository;
     }
 

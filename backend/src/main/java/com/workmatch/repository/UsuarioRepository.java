@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.workmatch.model.Usuario;
 
 @Repository
-public interface UserRepository extends JpaRepository<Usuario, UUID> {
+public interface UsuarioRepository extends JpaRepository<Usuario, UUID> {
 
     boolean existsByEmail(String email);
 

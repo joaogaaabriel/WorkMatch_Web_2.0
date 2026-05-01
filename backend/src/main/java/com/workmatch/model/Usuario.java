@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -22,7 +21,7 @@ import lombok.Setter;
 public class Usuario {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(nullable = false, length = 100)
@@ -31,17 +30,23 @@ public class Usuario {
     @Column(unique = true, nullable = false, length = 14)
     private String cpf;
 
-    @Column(nullable = false)
-    private LocalDate dataNascimento;
+    @Column(unique = true, nullable = false, length = 150)
+    private String email;
 
     @Column(nullable = false, length = 20)
     private String telefone;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false)
+    private LocalDate dataNascimento;
+
+    @Column(length = 200)
     private String endereco;
 
-    @Column(unique = true, nullable = false, length = 150)
-    private String email;
+    @Column(length = 100)
+    private String cidade;
+
+    @Column(length = 2)
+    private String estado;
 
     @Column(unique = true, nullable = false, length = 100)
     private String login;
@@ -50,15 +55,13 @@ public class Usuario {
     private String senha;
 
     @Column(nullable = false, length = 20)
-    private String role = "ADMIN";
+    private String role = "CLIENTE";
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime dataCadastro;
 
     @PrePersist
     public void prePersist() {
         this.dataCadastro = LocalDateTime.now();
     }
-
-
 }

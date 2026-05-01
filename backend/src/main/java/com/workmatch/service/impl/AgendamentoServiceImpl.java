@@ -13,7 +13,7 @@ import com.workmatch.model.Profissional;
 import com.workmatch.model.Usuario;
 import com.workmatch.repository.AgendamentoRepository;
 import com.workmatch.repository.ProfissionalRepository;
-import com.workmatch.repository.UserRepository;
+import com.workmatch.repository.UsuarioRepository;
 import com.workmatch.service.AgendamentoService;
 
 @Service
@@ -21,12 +21,12 @@ public class AgendamentoServiceImpl implements AgendamentoService {
 
     private final AgendamentoRepository agendamentoRepository;
     private final ProfissionalRepository profissionalRepository;
-    private final UserRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
 
     public AgendamentoServiceImpl(
             AgendamentoRepository agendamentoRepository,
             ProfissionalRepository profissionalRepository,
-            UserRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository) {
 
         this.agendamentoRepository = agendamentoRepository;
         this.profissionalRepository = profissionalRepository;

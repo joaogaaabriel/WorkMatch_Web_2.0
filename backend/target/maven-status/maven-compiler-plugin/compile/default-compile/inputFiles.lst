@@ -3,6 +3,7 @@
 /app/src/main/java/com/workmatch/controller/AgendamentoController.java
 /app/src/main/java/com/workmatch/controller/ProfissionalController.java
 /app/src/main/java/com/workmatch/controller/UsuarioController.java
+/app/src/main/java/com/workmatch/controller/ValidatorController.java
 /app/src/main/java/com/workmatch/dto/UsuarioDTO.java
 /app/src/main/java/com/workmatch/dto/request/AgendaRequest.java
 /app/src/main/java/com/workmatch/dto/request/AgendamentoRequest.java
@@ -23,7 +24,7 @@
 /app/src/main/java/com/workmatch/repository/AgendaRepository.java
 /app/src/main/java/com/workmatch/repository/AgendamentoRepository.java
 /app/src/main/java/com/workmatch/repository/ProfissionalRepository.java
-/app/src/main/java/com/workmatch/repository/UserRepository.java
+/app/src/main/java/com/workmatch/repository/UsuarioRepository.java
 /app/src/main/java/com/workmatch/security/CustomUserDetailsService.java
 /app/src/main/java/com/workmatch/security/SecurityConfig.java
 /app/src/main/java/com/workmatch/service/AgendaService.java

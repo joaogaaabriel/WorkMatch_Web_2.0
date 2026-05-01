@@ -2,7 +2,7 @@ package com.workmatch.service;
 
 import com.workmatch.dto.UsuarioDTO;
 import com.workmatch.model.Usuario;
-import com.workmatch.repository.UserRepository;
+import com.workmatch.repository.UsuarioRepository;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class UsuarioService {
 
-    private final UserRepository repository;
+    private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
 
-    public UsuarioService(UserRepository repository, PasswordEncoder passwordEncoder) {
+    public UsuarioService(UsuarioRepository repository, PasswordEncoder passwordEncoder) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -44,5 +44,9 @@ public class UsuarioService {
         usuario.setRole(dto.getRole());
 
         return repository.save(usuario);
+    }
+
+    public boolean existePorCpf(String cpf) {
+        return repository.existsByCpf(cpf);
     }
 }
