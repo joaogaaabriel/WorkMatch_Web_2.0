@@ -7,11 +7,6 @@
 
 ```js
 
-// ✅ DEPOIS (via service layer com URLs corretas)
-profissionaisService.listar()
-agendamentosService.meus()
-profissionaisService.listar()
-```
 
 ### Bug 2 — VITE_API_URL dev apontava para porta morta (8080)
 ```ini

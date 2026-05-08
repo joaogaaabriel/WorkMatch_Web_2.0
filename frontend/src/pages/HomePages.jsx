@@ -3,7 +3,6 @@
  */
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { profissionaisService } from "../services/api";
 import PageLayout from "../components/PageLayout";
 import { Btn, Spinner, EmptyState, Stars, Avatar, Badge } from "../components/ui";
 import Toast from "../components/Toast";

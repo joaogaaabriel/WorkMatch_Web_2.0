@@ -9,7 +9,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { apiAuth, apiBackend } from "../services/api";
 import { usuariosService } from "../services/api";
 import PageLayout from "../components/PageLayout";
 import { Btn, Card, CardHeader, CardBody, CardTitle, Input, Divider, Alert, Badge } from "../components/ui";
