@@ -1,2 +1,3 @@
-com/workmatch/repository/UsuarioRepository.class
-com/workmatch/controller/ValidatorController.class
+com/workmatch/controller/AuthService.class
+com/workmatch/config/CorsConfig.class
+com/workmatch/dto/LoginDTO.class

@@ -42,28 +42,6 @@ services:
     networks:
       - workmatch-net
 
-  auth-serve:
-    build:
-      context: ./auth-serve
-      dockerfile: Dockerfile.dev
-    container_name: workmatch-auth-serve
-    environment:
-      SERVER_PORT: 8082
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/workmatch
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 1234
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8082:8082"
-    volumes:
-      - ./auth-serve:/app
-      - ~/.m2:/root/.m2
-    networks:
-      - workmatch-net
-
   gateway:
     build:
       context: ./gateway
@@ -75,7 +53,6 @@ services:
       - "8083:8083"
     depends_on:
       - backend
-      - auth-serve
     networks:
       - workmatch-net
 

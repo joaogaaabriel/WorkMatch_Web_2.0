@@ -1,53 +1,48 @@
 package com.workmatch.dto;
 
-import java.time.LocalDate;
-
-import com.workmatch.validation.CpfValida;
-import com.workmatch.validation.EmailValida;
-import com.workmatch.validation.TelefoneValida;
-
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
-public class UsuarioDTO {
+import java.time.LocalDate;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
-    private String nome;
+public record UsuarioDTO(
 
-    @CpfValida
-    @NotBlank(message = "CPF é obrigatório")
-    private String cpf;
+        @NotBlank(message = "Nome é obrigatório")
+        @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
+        String nome,
 
-    @NotNull(message = "Data de nascimento é obrigatória")
-    private LocalDate dataNascimento;
+        @NotBlank(message = "CPF é obrigatório")
+        @Size(min = 11, max = 14, message = "CPF inválido")
+        String cpf,
 
-    @TelefoneValida
-    @NotBlank(message = "Telefone é obrigatório")
-    private String telefone;
+        @NotBlank(message = "E-mail é obrigatório")
+        @Email(message = "E-mail inválido")
+        @Size(max = 150)
+        String email,
 
-    @NotBlank(message = "Endereço é obrigatório")
-    @Size(max = 150, message = "Endereço deve ter no máximo 150 caracteres")
-    private String endereco;
+        @NotBlank(message = "Telefone é obrigatório")
+        @Size(max = 20)
+        String telefone,
 
-    @EmailValida
-    @NotBlank(message = "E-mail é obrigatório")
-    private String email;
+        @NotNull(message = "Data de nascimento é obrigatória")
+        LocalDate dataNascimento,
 
-    @NotBlank(message = "Login é obrigatório")
-    @Size(max = 100, message = "Login deve ter no máximo 100 caracteres")
-    private String login;
+        @Size(max = 200)
+        String endereco,
 
-    @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
-    private String senha;
+        @Size(max = 100)
+        String cidade,
 
-    @NotBlank(message = "Role é obrigatório")
-    @Size(max = 20, message = "Role deve ter no máximo 20 caracteres")
-    private String role;
-}
+        @Size(min = 2, max = 2, message = "Estado deve ter 2 letras (UF)")
+        String estado,
+
+        @NotBlank(message = "Login é obrigatório")
+        @Size(min = 4, max = 100, message = "Login deve ter entre 4 e 100 caracteres")
+        String login,
+
+        @NotBlank(message = "Senha é obrigatória")
+        @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
+        String senha
+) {}

@@ -12,12 +12,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AgendamentoException.class)
-    public ResponseEntity<String> handleAgendamento(AgendamentoException ex) {
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT) 
-                .body(ex.getMessage());
-    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidationErrors(MethodArgumentNotValidException ex) {

@@ -24,6 +24,9 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = true, length = 255)
+    private String keycloakId;
+
     @Column(nullable = false, length = 100)
     private String nome;
 

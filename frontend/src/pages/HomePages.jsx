@@ -29,23 +29,8 @@ const BANNER_COLORS = [
 export default function HomePages() {
   const navigate = useNavigate();
   const { toast, showToast, hideToast } = useToast();
-  const [profissionais, setProfissionais] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [busca, setBusca] = useState("");
-  const [filtro, setFiltro] = useState("Todas");
 
-  useEffect(() => {
-    profissionaisService.listar()
-      .then(setProfissionais)
-      .catch(() => showToast("Erro ao carregar profissionais.", "error"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtrados = useMemo(() => profissionais.filter(p => {
-    const matchB = !busca || p.nome?.toLowerCase().includes(busca.toLowerCase()) || p.especialidade?.toLowerCase().includes(busca.toLowerCase()) || p.cidade?.toLowerCase().includes(busca.toLowerCase());
-    const matchE = filtro === "Todas" || p.especialidade?.toLowerCase().includes(filtro.toLowerCase());
-    return matchB && matchE;
-  }), [profissionais, busca, filtro]);
 
   return (
     <PageLayout title="Encontre profissionais" subtitle={`${profissionais.length} disponíveis`}>

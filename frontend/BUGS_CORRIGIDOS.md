@@ -3,13 +3,9 @@
 ## 🐛 Bugs Críticos Corrigidos
 
 ### Bug 1 — Template literals com aspas simples (CRÍTICO)
-**Arquivos afetados originais:** `HomePages.jsx`, `MeusAgendamentosPage.jsx`, `GerenciarProfissionaisPages.jsx`
+**Arquivos afetados originais:** `HomePages.jsx`, 
 
 ```js
-// ❌ ANTES (nunca interpolava — virava texto literal)
-await axios.get("${API}/api/profissionais", ...)
-await axios.get("${API}/api/agendamentos/meus", ...)
-await axios.get("${API}/api/profissionais", ...)
 
 // ✅ DEPOIS (via service layer com URLs corretas)
 profissionaisService.listar()
@@ -134,9 +130,6 @@ src/
     ├── CadastroPage.jsx
     ├── HomePages.jsx
     ├── ProfissionalDetalhes.jsx
-    ├── MeusAgendamentosPage.jsx
-    ├── GerenciarProfissionaisPages.jsx
-    ├── GerenciarAgendaPage.jsx
     ├── ConfiguracaoPerfilPage.jsx
     └── SuporteClientePage.jsx
 ```

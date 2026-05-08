@@ -5,16 +5,22 @@ import Toast from "../components/Toast";
 import { useToast } from "../hooks/useToast";
 import { apiBackend, validacaoService } from "../services/api";
 
+const ESTADOS = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
+  "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
+  "RS","RO","RR","SC","SP","SE","TO",
+];
+
 const INITIAL_USUARIO = {
   nome: "", cpf: "", email: "", telefone: "", dataNascimento: "",
-  endereco: "", cidade: "", estado: "",
+  cep: "", endereco: "", numero: "", complemento: "", cidade: "", estado: "",
   login: "", senha: "",
   role: "CLIENTE",
 };
 
 const INITIAL_PROFISSIONAL = {
   nome: "", cpf: "", email: "", telefone: "", dataNascimento: "",
-  endereco: "", cidade: "", estado: "",
+  cep: "", endereco: "", numero: "", complemento: "", cidade: "", estado: "",
   especialidade: "", descricao: "", experienciaAnos: "",
   login: "", senha: "",
 };
@@ -33,6 +39,11 @@ function fmtTel(v) {
   return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
 }
 
+function fmtCep(v) {
+  v = v.replace(/\D/g, "").slice(0, 8);
+  return v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v;
+}
+
 function validateStep1(form) {
   const errs = {};
   if (!form.nome.trim()) errs.nome = "Nome obrigatório";
@@ -45,8 +56,10 @@ function validateStep1(form) {
 function validateStep2(form, isProfissional) {
   const errs = {};
   if (!form.email || !form.email.includes("@")) errs.email = "E-mail inválido";
+  if (!form.cep || form.cep.replace(/\D/g, "").length < 8) errs.cep = "CEP inválido";
+  if (!form.endereco?.trim()) errs.endereco = "Endereço obrigatório";
   if (!form.cidade?.trim()) errs.cidade = "Cidade obrigatória";
-  if (!form.estado || form.estado.length !== 2) errs.estado = "UF inválida (ex: GO)";
+  if (!form.estado) errs.estado = "Estado obrigatório";
   if (isProfissional && !form.especialidade?.trim()) errs.especialidade = "Especialidade obrigatória";
   return errs;
 }
@@ -66,6 +79,7 @@ export default function CadastroPage() {
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -82,9 +96,36 @@ export default function CadastroPage() {
     let { name, value } = e.target;
     if (name === "cpf") value = fmtCpf(value);
     if (name === "telefone") value = fmtTel(value);
-    if (name === "estado") value = value.toUpperCase().slice(0, 2);
+    if (name === "cep") {
+      value = fmtCep(value);
+      if (value.replace(/\D/g, "").length === 8) buscarCep(value);
+    }
     setForm(p => ({ ...p, [name]: value }));
     setErrors(p => ({ ...p, [name]: "" }));
+  }
+
+  async function buscarCep(cep) {
+    const cepLimpo = cep.replace(/\D/g, "");
+    setLoadingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setErrors(p => ({ ...p, cep: "CEP não encontrado" }));
+        return;
+      }
+      setForm(p => ({
+        ...p,
+        endereco: data.logradouro || "",
+        cidade: data.localidade || "",
+        estado: data.uf || "",
+      }));
+      setErrors(p => ({ ...p, cep: "", endereco: "", cidade: "", estado: "" }));
+    } catch {
+      setErrors(p => ({ ...p, cep: "Erro ao buscar CEP" }));
+    } finally {
+      setLoadingCep(false);
+    }
   }
 
   function field(name, label, extra = {}) {
@@ -94,16 +135,13 @@ export default function CadastroPage() {
   async function handleStep1Next() {
     const errs = validateStep1(form);
     if (Object.keys(errs).length) { setErrors(errs); return; }
-
     setLoading(true);
     try {
       const cpfLimpo = form.cpf.replace(/\D/g, "");
       const { valido } = await validacaoService.validarCpf(cpfLimpo);
       if (!valido) { setErrors({ cpf: "CPF inválido." }); return; }
-
       const { existe } = await validacaoService.cpfExiste(cpfLimpo);
       if (existe) { setErrors({ cpf: "CPF já cadastrado." }); return; }
-
       setStep(2);
     } catch {
       showToast("Erro ao validar CPF.", "error");
@@ -120,46 +158,43 @@ export default function CadastroPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     const errs = validateStep3(form);
-    if (Object.keys(errs).length) {
-      setErrors(errs);
-      return;
-    }
-
+    if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-
     try {
       const cpfLimpo = form.cpf.replace(/\D/g, "");
       const telLimpo = form.telefone.replace(/\D/g, "");
+      const enderecoCompleto = [form.endereco, form.numero, form.complemento]
+          .filter(Boolean).join(", ");
 
       const payload = {
         nome: form.nome,
         cpf: cpfLimpo,
         dataNascimento: form.dataNascimento,
         telefone: telLimpo,
-        endereco: form.endereco,
+        endereco: enderecoCompleto,
         cidade: form.cidade,
         estado: form.estado,
         email: form.email,
         login: form.login,
         senha: form.senha,
         role: isProfissional ? "PROFISSIONAL" : "CLIENTE",
+        ...(isProfissional && {
+          especialidade: form.especialidade,
+          descricao: form.descricao,
+          experienciaAnos: form.experienciaAnos ? Number(form.experienciaAnos) : null,
+        }),
       };
 
-      await apiBackend.post("/api/usuarios", payload);
-
+      const endpoint = isProfissional ? "/api/profissionais" : "/api/usuarios";
+      await apiBackend.post(endpoint, payload);
       showToast("Conta criada com sucesso! 🎉", "success");
       setTimeout(() => navigate("/login"), 1500);
-
     } catch (error) {
-      console.error("Erro no cadastro:", error);
-
       const backendMsg =
           error.response?.data?.message ||
           error.response?.data?.erro ||
           JSON.stringify(error.response?.data);
-
       showToast(backendMsg || "Erro ao criar conta.", "error");
     } finally {
       setLoading(false);
@@ -172,11 +207,9 @@ export default function CadastroPage() {
     return (
         <div className="wm-auth" style={styles.page}>
           <Header navigate={navigate} showBack={false} />
-
           <div style={styles.container}>
             <h1 style={styles.title}>Bem-vindo ao WorkMatch</h1>
             <p style={styles.subtitle}>Como você quer usar a plataforma?</p>
-
             <div style={styles.perfilGrid}>
               <button style={styles.perfilCard} onClick={() => escolherPerfil("CLIENTE")}>
                 <span style={styles.perfilIcon}>🧑‍💼</span>
@@ -189,13 +222,11 @@ export default function CadastroPage() {
                 <span style={styles.perfilDesc}>Quero oferecer meus serviços</span>
               </button>
             </div>
-
             <p style={styles.termos}>
               Já tem conta?{" "}
               <button onClick={() => navigate("/login")} style={styles.link}>Entrar →</button>
             </p>
           </div>
-
           <Toast {...toast} onClose={hideToast} />
         </div>
     );
@@ -259,10 +290,46 @@ export default function CadastroPage() {
             {step === 2 && (
                 <div style={styles.formCol}>
                   <Input {...field("email", "E-mail", { placeholder: "seuemail@exemplo.com", icon: "✉️", required: true, type: "email" })} />
-                  <Input {...field("endereco", "Endereço", { placeholder: "Rua das Flores, 123", icon: "📍" })} />
+
+                  <div style={{ position: "relative" }}>
+                    <Input {...field("cep", "CEP", { placeholder: "00000-000", icon: "📮", required: true, maxLength: 9 })} />
+                    {loadingCep && (
+                        <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-4px)", fontSize: 13, color: "var(--clr-text-light)" }}>
+                    Buscando...
+                  </span>
+                    )}
+                  </div>
+
+                  <Input {...field("endereco", "Rua / Logradouro", { placeholder: "Preenchido automaticamente pelo CEP", icon: "🏠", required: true })} />
+
                   <div className="wm-form-grid-2">
-                    <Input {...field("cidade", "Cidade", { placeholder: "Goiânia", icon: "🏙️", required: true })} />
-                    <Input {...field("estado", "UF", { placeholder: "GO", icon: "🗺️", required: true, maxLength: 2 })} />
+                    <Input {...field("numero", "Número", { placeholder: "Ex: 123", icon: "🔢" })} />
+                    <Input {...field("complemento", "Complemento", { placeholder: "Apto, Bloco...", icon: "🏢" })} />
+                  </div>
+
+                  <div className="wm-form-grid-2">
+                    <Input {...field("cidade", "Cidade", { placeholder: "Preenchida pelo CEP", icon: "🏙️", required: true })} />
+
+                    <div className="wm-form-group">
+                      <label className="wm-label">
+                        Estado <span className="wm-label__required">*</span>
+                      </label>
+                      <div className="wm-input-wrapper">
+                        <span className="wm-input-icon">🗺️</span>
+                        <select
+                            name="estado"
+                            value={form.estado ?? ""}
+                            onChange={handleChange}
+                            className={`wm-input wm-input--with-icon${errors.estado ? " wm-input--error" : ""}`}
+                        >
+                          <option value="">Selecione</option>
+                          {ESTADOS.map(uf => (
+                              <option key={uf} value={uf}>{uf}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {errors.estado && <span className="wm-field-error">{errors.estado}</span>}
+                    </div>
                   </div>
 
                   {isProfissional && (
