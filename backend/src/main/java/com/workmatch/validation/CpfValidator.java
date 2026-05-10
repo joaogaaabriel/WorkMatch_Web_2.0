@@ -7,28 +7,53 @@ public class CpfValidator implements ConstraintValidator<CpfValida, String> {
 
     @Override
     public boolean isValid(String cpf, ConstraintValidatorContext context) {
-        if (cpf == null) return false;
 
-        if (cpf.length() != 11 || cpf.matches("(\\d)\\1{10}")) return false;
-
-        try {
-            int firstDigit = calculateDigit(cpf, 9, 10);
-            if (firstDigit != (cpf.charAt(9) - '0')) return false;
-
-            int secondDigit = calculateDigit(cpf, 10, 11);
-            return secondDigit == (cpf.charAt(10) - '0');
-
-        } catch (Exception e) {
+        if (cpf == null) {
             return false;
         }
-    }
 
-    private int calculateDigit(String cpf, int length, int weight) {
-        int sum = 0;
-        for (int i = 0; i < length; i++) {
-            sum += (cpf.charAt(i) - '0') * (weight - i);
+        cpf = cpf.replaceAll("\\D", "");
+
+        if (cpf.length() != 11) {
+            return false;
         }
-        int digit = 11 - (sum % 11);
-        return digit > 9 ? 0 : digit;
+
+        // Rejeita CPFs repetidos
+        if (cpf.matches("(\\d)\\1{10}")) {
+            return false;
+        }
+
+        try {
+
+            int soma = 0;
+
+            for (int i = 0; i < 9; i++) {
+                soma += (cpf.charAt(i) - '0') * (10 - i);
+            }
+
+            int resto = 11 - (soma % 11);
+
+            int digito1 = (resto >= 10) ? 0 : resto;
+
+            if (digito1 != (cpf.charAt(9) - '0')) {
+                return false;
+            }
+
+            soma = 0;
+
+            for (int i = 0; i < 10; i++) {
+                soma += (cpf.charAt(i) - '0') * (11 - i);
+            }
+
+            resto = 11 - (soma % 11);
+
+            int digito2 = (resto >= 10) ? 0 : resto;
+
+            return digito2 == (cpf.charAt(10) - '0');
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 }

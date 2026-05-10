@@ -1,13 +1,13 @@
-# Usar Node 22 (compatível com Vite)
-FROM node:22-alpine
+FROM node:20
 
 WORKDIR /app
 
-# Copia apenas package.json e package-lock.json para instalar dependências
 COPY package*.json ./
+
 RUN npm install
 
-EXPOSE 5173
+COPY . .
 
-# Rodar em modo desenvolvimento
-CMD ["npm", "run", "dev", "--", "--host"]
+EXPOSE 5174
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

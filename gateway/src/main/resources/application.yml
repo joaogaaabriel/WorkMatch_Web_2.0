@@ -1,21 +1,40 @@
 server:
-  port: 8083
+  port: 8080
 
 spring:
+  application:
+    name: workmatch-gateway
+
   cloud:
     gateway:
+      default-filters:
+        - Retry=3
+
       routes:
-        - id: agendas
-          uri: http://localhost:8081
+        - id: backend-service
+          uri: http://workmatch-backend:8081
           predicates:
-            - Path=/api/agendas/**
+            - Path=/api/**
+          filters:
+            - StripPrefix=0
+            - PreserveHostHeader
 
-        - id: profissionais
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/profissionais/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5174"
+              - "http://127.0.0.1:5174"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
 
-        - id: agendamentos
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/agendamentos/**
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: INFO

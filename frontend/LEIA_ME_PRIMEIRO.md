@@ -30,7 +30,7 @@ npm run dev
 ```
 
 ## Portas esperadas
-- Frontend:   http://localhost:5173
+- Frontend:   http://localhost:5174
 - Backend:    http://localhost:8081
 - Auth-serve: http://localhost:8082
 - PostgreSQL:  localhost:5432

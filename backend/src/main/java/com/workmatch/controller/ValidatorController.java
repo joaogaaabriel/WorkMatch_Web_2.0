@@ -1,6 +1,7 @@
 package com.workmatch.controller;
 
 import com.workmatch.service.UsuarioService;
+import com.workmatch.validation.CpfValidator;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,15 +21,18 @@ public class ValidatorController {
     public ResponseEntity<?> validarCpf(@RequestBody Map<String, String> body) {
         String cpf = body.get("cpf");
 
-        if (cpf == null || cpf.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "erro", "CPF é obrigatório"
-            ));
-        }
+        System.out.println("CPF recebido: " + cpf);
+        System.out.println("VALIDADOR NOVO");
 
-        boolean valido = cpf.length() == 11;
+        cpf = cpf.replaceAll("\\D", "");
 
-        return ResponseEntity.ok(Map.of("valido", valido));
+        CpfValidator validator = new CpfValidator();
+
+        boolean valido = validator.isValid(cpf, null);
+
+        return ResponseEntity.ok(
+                Map.of("valido", valido)
+        );
     }
 
     @GetMapping("/cpf-existe/{cpf}")

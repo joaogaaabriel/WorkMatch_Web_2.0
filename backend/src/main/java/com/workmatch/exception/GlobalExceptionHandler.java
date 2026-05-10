@@ -1,40 +1,31 @@
 package com.workmatch.exception;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.workmatch.keycloak.KeycloakIntegrationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+import java.util.Map;
+
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleDomainException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", ex.getMessage()));
+    }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationErrors(MethodArgumentNotValidException ex) {
-
-        Map<String, String> erros = new HashMap<>();
-
-        ex.getBindingResult().getFieldErrors();
-
-        return ResponseEntity.badRequest().body(erros);
+    @ExceptionHandler(KeycloakIntegrationException.class)
+    public ResponseEntity<Map<String, String>> handleKeycloakException(KeycloakIntegrationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("message", "Erro na integracao com o servico de autenticacao: " + ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleGeneric(Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "erro", "Erro interno no servidor",
-                "detalhes", e.getMessage()
-        ));
-    }
-
-      @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleBusinessErrors(IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of(
-                "erro", e.getMessage()
-        ));
+    public ResponseEntity<Map<String, String>> handleGenericException() {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("message", "Erro interno no servidor"));
     }
 }

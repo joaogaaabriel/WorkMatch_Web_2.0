@@ -1,82 +1,97 @@
-version: '3.8'
-
 services:
+
   db:
     image: postgres:15
     container_name: workmatch-db
     environment:
       POSTGRES_DB: workmatch
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - workmatch-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d workmatch"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.3
+    container_name: workmatch-keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/workmatch
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "9090:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - workmatch-net
 
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
     container_name: workmatch-backend
     environment:
-      SERVER_PORT: 8081
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/workmatch
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 1234
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      KEYCLOAK_CLIENT_SECRET: your-backend-client-secret
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8081"
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./backend:/app
-      - ~/.m2:/root/.m2
+      keycloak:
+        condition: service_started
     networks:
       - workmatch-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   gateway:
     build:
       context: ./gateway
-      dockerfile: Dockerfile.dev
     container_name: workmatch-gateway
-    environment:
-      SERVER_PORT: 8083
     ports:
-      - "8083:8083"
+      - "8082:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - workmatch-net
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: workmatch-frontend
+    build: ./frontend
+    container_name: frontend
     ports:
-      - "5173:5173"
-    environment:
-      - REACT_APP_API_URL=http://gateway:8083
-      - CHOKIDAR_USEPOLLING=true
+      - "5174:5174"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    depends_on:
-      - gateway
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    mem_limit: 4g
+    command: npm run dev -- --host 0.0.0.0
     networks:
       - workmatch-net
 
 volumes:
-  db_data:
+  postgres_data:
 
 networks:
   workmatch-net:
-    driver: bridge

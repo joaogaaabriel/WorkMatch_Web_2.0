@@ -7,6 +7,14 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const user = getUserFromStorage();
+  if (user?.token) {
+    config.headers.Authorization = `Bearer ${user.token}`;
+  }
+  return config;
+});
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -14,10 +22,18 @@ api.interceptors.response.use(
         localStorage.removeItem("user");
         window.location.href = "/login";
       }
-
       return Promise.reject(error);
     }
 );
+
+function getUserFromStorage() {
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
 export const authService = {
   login: async (credentials) => {

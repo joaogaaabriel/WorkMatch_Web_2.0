@@ -7,6 +7,7 @@ import LoginPage from "../pages/LoginPage";
 import CadastroPage from "../pages/CadastroPage";
 import HomePage from "../pages/HomePages";
 
+
 export default function AppRoutes() {
   return (
     <Routes>
