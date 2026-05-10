@@ -44,8 +44,17 @@ services:
       context: ./backend
     container_name: workmatch-backend
     environment:
-      KEYCLOAK_CLIENT_SECRET: your-backend-client-secret
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      # Banco de dados — usa o nome do serviço "db" como host
+      DB_USER: postgres
+      DB_PASS: postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/workmatch
+      # Keycloak — usa o nome do serviço "keycloak" como host
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: workmatch
+      KEYCLOAK_CLIENT_ID: workmatch-backend
+      KEYCLOAK_CLIENT_SECRET: FieE1IEFvDfLqlNdhUACJagsVvUxOgnH
+      KEYCLOAK_ADMIN_USER: admin
+      KEYCLOAK_ADMIN_PASS: admin
     ports:
       - "8081:8081"
     depends_on:

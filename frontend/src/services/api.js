@@ -36,10 +36,24 @@ function getUserFromStorage() {
 }
 
 export const authService = {
+
   login: async (credentials) => {
     const response = await api.post("/api/login", credentials);
-    return response.data;
+    const userData = response.data;
+
+    // Persiste na storage para que o interceptor injete o Bearer nas próximas chamadas
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    return userData;
   },
+
+  logout: () => {
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+  },
+
+  getUser: () => getUserFromStorage(),
+  isAuthenticated: () => !!getUserFromStorage()?.token,
 };
 
 export const usuariosService = {
@@ -63,20 +77,32 @@ export const usuariosService = {
   },
 };
 
+export const profissionaisService = {
+  criar: async (data) => {
+    const response = await api.post("/api/profissionais", data);
+    return response.data;
+  },
+
+  buscarPorId: async (id) => {
+    const response = await api.get(`/api/profissionais/${id}`);
+    return response.data;
+  },
+};
+
 export const validacaoService = {
   validarCpf: async (cpf) => {
     const response = await api.post("/api/validar/cpf", { cpf });
-    return response.data;
+    return response.data; // { valido: boolean }
   },
 
   cpfExiste: async (cpf) => {
     const response = await api.get(`/api/validar/cpf-existe/${cpf}`);
-    return response.data;
+    return response.data; // { existe: boolean }
   },
 
   emailExiste: async (email) => {
     const response = await api.get(`/api/validar/email-existe/${email}`);
-    return response.data;
+    return response.data; // { existe: boolean }
   },
 };
 

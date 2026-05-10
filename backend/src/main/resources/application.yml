@@ -1,25 +1,30 @@
-server:
-  port: 8081
-
 spring:
+  application:
+    name: workmatch-backend
+
   datasource:
-    url: jdbc:postgresql://db:5432/workmatch
-    username: postgres
-    password: postgres
+    # SPRING_DATASOURCE_URL é injetada pelo Docker Compose (host = db)
+    # Fallback para desenvolvimento local: localhost
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/workmatch}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+server:
+  port: 8081
+
 keycloak:
-  server-url: http://keycloak:8080
-  realm: workmatch
-  client-id: workmatch-backend
-  client-secret: ${KEYCLOAK_CLIENT_SECRET}
-  admin-username: admin
-  admin-password: ${KEYCLOAK_ADMIN_PASSWORD}
+  server-url: ${KEYCLOAK_URL:http://localhost:8080}
+  realm: ${KEYCLOAK_REALM:workmatch}
+  client-id: ${KEYCLOAK_CLIENT_ID:workmatch-backend}
+  client-secret: ${KEYCLOAK_CLIENT_SECRET:change-me}
+  admin-username: ${KEYCLOAK_ADMIN_USER:admin}
+  admin-password: ${KEYCLOAK_ADMIN_PASS:admin}

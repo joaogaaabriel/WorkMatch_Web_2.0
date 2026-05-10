@@ -1,7 +1,7 @@
 package com.workmatch.controller;
 
 import com.workmatch.dto.LoginDTO;
-import com.workmatch.dto.response.LoginResponseDTO;
+import com.workmatch.dto.response.LoginResponse;
 import com.workmatch.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -19,7 +19,7 @@ public class AuthController {
     }
 
     @PostMapping
-    public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginDTO dto) {
+    public ResponseEntity<LoginResponse> login(@RequestBody @Valid LoginDTO dto) {
         return ResponseEntity.ok(authService.login(dto));
     }
 }
