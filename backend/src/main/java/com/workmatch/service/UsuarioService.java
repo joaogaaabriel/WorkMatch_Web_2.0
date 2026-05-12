@@ -29,9 +29,18 @@ public class UsuarioService {
         this.keycloakRegistration = keycloakRegistration;
     }
 
+    // ── Cadastro ──────────────────────────────────────────────────────────────
 
     @Transactional
     public Object cadastrar(UsuarioDTO dto) {
+
+        // Normaliza CPF e telefone — remove máscara independente do que veio no body
+        String cpf      = limpar(dto.getCpf());
+        String telefone = limpar(dto.getTelefone());
+
+        dto.setCpf(cpf);
+        dto.setTelefone(telefone);
+
         validarUnicidade(dto);
 
         String keycloakId;
@@ -57,10 +66,11 @@ public class UsuarioService {
         } catch (Exception e) {
             keycloakRegistration.rollback(keycloakId);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Falha ao salvar usuário no banco de dados");
+                    "Falha ao salvar no banco de dados: " + e.getMessage());
         }
     }
 
+    // ── CRUD ──────────────────────────────────────────────────────────────────
 
     public Usuario buscarPorId(UUID id) {
         return usuarioRepo.findById(id)
@@ -73,7 +83,7 @@ public class UsuarioService {
         Usuario u = buscarPorId(id);
         u.setNome(dto.getNome());
         u.setEmail(dto.getEmail());
-        u.setTelefone(dto.getTelefone());
+        u.setTelefone(limpar(dto.getTelefone()));
         u.setEndereco(dto.getEndereco());
         u.setCidade(dto.getCidade());
         u.setEstado(dto.getEstado());
@@ -89,6 +99,13 @@ public class UsuarioService {
         usuarioRepo.delete(u);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Remove qualquer caractere não-numérico (máscaras de CPF, telefone, CEP etc.) */
+    private String limpar(String valor) {
+        if (valor == null) return null;
+        return valor.replaceAll("\\D", "");
+    }
 
     private void validarUnicidade(UsuarioDTO dto) {
         if (usuarioRepo.existsByCpf(dto.getCpf()) || profissionalRepo.existsByCpf(dto.getCpf()))
@@ -122,7 +139,7 @@ public class UsuarioService {
         Profissional p = new Profissional();
         p.setKeycloakId(keycloakId);
         p.setNome(dto.getNome());
-        dto.setCpf(p.getCpf());
+        p.setCpf(dto.getCpf());
         p.setEmail(dto.getEmail());
         p.setTelefone(dto.getTelefone());
         p.setDataNascimento(dto.getDataNascimento());

@@ -14,6 +14,12 @@ public class KeycloakUserRequest {
     private String firstName;
     private boolean enabled = true;
 
+    @JsonProperty("emailVerified")
+    private boolean emailVerified = true; // evita bloqueio de login por e-mail não verificado
+
+    @JsonProperty("requiredActions")
+    private List<String> requiredActions = List.of();
+
     @JsonProperty("credentials")
     private List<Map<String, Object>> credentials;
 
@@ -26,6 +32,8 @@ public class KeycloakUserRequest {
         req.email = email;
         req.firstName = nome;
         req.enabled = true;
+        req.emailVerified = true;
+        req.requiredActions = List.of();
         req.credentials = List.of(Map.of(
                 "type", "password",
                 "value", senha,
@@ -36,5 +44,4 @@ public class KeycloakUserRequest {
         );
         return req;
     }
-
 }
