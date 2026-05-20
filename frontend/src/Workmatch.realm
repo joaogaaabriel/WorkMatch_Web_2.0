@@ -1,0 +1,35 @@
+{
+  "realm": "workmatch",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "workmatch-backend",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "your-backend-client-secret",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false
+    },
+    {
+      "clientId": "workmatch-gateway",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "your-gateway-client-secret",
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false
+    }
+  ],
+  "roles": {
+    "realm": [
+      { "name": "CLIENTE" },
+      { "name": "PROFISSIONAL" }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: workmatch-gateway
+
+  cloud:
+    gateway:
+      default-filters:
+        - Retry=3
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+
+      routes:
+        - id: backend-service
+          uri: http://workmatch-backend:8081
+          predicates:
+            - Path=/api/**
+          filters:
+            - StripPrefix=0
+            - PreserveHostHeader
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5174"
+              - "http://127.0.0.1:5174"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty: INFO

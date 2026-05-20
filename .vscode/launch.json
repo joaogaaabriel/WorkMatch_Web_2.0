@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "WorkMatchApplication",
+            "request": "launch",
+            "mainClass": "com.workmatch.WorkMatchApplication",
+            "projectName": "workmatch"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-App<backend>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.workmatch.App",
+            "projectName": "backend",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
