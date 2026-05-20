@@ -1,4 +1,0 @@
-gateway\demo\DemoApplication.class
-main\java\gateway\demo\config\WebClientConfig.class
-main\java\gateway\demo\filter\GatewayFilterChain.class
-main\java\gateway\demo\filter\GlobalFilter.class
