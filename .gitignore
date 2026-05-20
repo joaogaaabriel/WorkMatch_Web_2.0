@@ -14,7 +14,7 @@ frontend/dist/
 # =========================
 # Environment Variables
 # =========================
-.env
+infra/docker/.env
 .env.*
 
 frontend/.env
