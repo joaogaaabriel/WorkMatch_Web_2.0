@@ -5,13 +5,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 @Entity
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario {
@@ -64,45 +63,9 @@ public class Usuario {
         this.dataCadastro = LocalDateTime.now();
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    @PreUpdate
+    public void preUpdate() {
+        this.dataCadastro = LocalDateTime.now();
+    }
 
-    public String getKeycloakId() { return keycloakId; }
-    public void setKeycloakId(String keycloakId) { this.keycloakId = keycloakId; }
-
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
-
-    public String getCpf() { return cpf; }
-    public void setCpf(String cpf) { this.cpf = cpf; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getTelefone() { return telefone; }
-    public void setTelefone(String telefone) { this.telefone = telefone; }
-
-    public LocalDate getDataNascimento() { return dataNascimento; }
-    public void setDataNascimento(LocalDate dataNascimento) { this.dataNascimento = dataNascimento; }
-
-    public String getEndereco() { return endereco; }
-    public void setEndereco(String endereco) { this.endereco = endereco; }
-
-    public String getCidade() { return cidade; }
-    public void setCidade(String cidade) { this.cidade = cidade; }
-
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
-
-    public String getLogin() { return login; }
-    public void setLogin(String login) { this.login = login; }
-
-    public String getSenha() { return senha; }
-    public void setSenha(String senha) { this.senha = senha; }
-
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
-
-    public LocalDateTime getDataCadastro() { return dataCadastro; }
-    public void setDataCadastro(LocalDateTime dataCadastro) { this.dataCadastro = dataCadastro; }
 }
