@@ -1,59 +1,32 @@
-/**
- * WorkMatch 2.0 — MeusServicos
- * Tela unificada de serviços para CLIENTE e PROFISSIONAL.
- * O role do usuário define as tabs, dados e ações exibidos.
- */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import PageLayout from "../components/PageLayout";
 import { Btn, Card, CardBody, Badge, EmptyState } from "../components/ui";
-
-// ─────────────────────────────────────────────
-// Configuração por role
-// ─────────────────────────────────────────────
+import api from "../services/api";
 
 const TABS_CLIENTE = [
-    { key: "publicado",  label: "Publicados",   emoji: "📋" },
-    { key: "negociando", label: "Negociando",   emoji: "💬" },
-    { key: "andamento",  label: "Em andamento", emoji: "⚙️" },
-    { key: "concluido",  label: "Concluídos",   emoji: "✅" },
+    { key: "PUBLICADO",  label: "Publicados",   emoji: "📋" },
+    { key: "NEGOCIANDO", label: "Negociando",   emoji: "💬" },
+    { key: "CONTRATADO", label: "Contratados",  emoji: "🤝" },
+    { key: "ANDAMENTO",  label: "Em andamento", emoji: "⚙️" },
+    { key: "FINALIZADO", label: "Finalizados",  emoji: "✅" },
 ];
 
 const TABS_PROFISSIONAL = [
-    { key: "negociando", label: "Negociando",   emoji: "💬" },
-    { key: "andamento",  label: "Em andamento", emoji: "⚙️" },
-    { key: "concluido",  label: "Concluídos",   emoji: "✅" },
+    { key: "NEGOCIANDO", label: "Negociando",   emoji: "💬" },
+    { key: "CONTRATADO", label: "Contratados",  emoji: "🤝" },
+    { key: "ANDAMENTO",  label: "Em andamento", emoji: "⚙️" },
+    { key: "FINALIZADO", label: "Finalizados",  emoji: "✅" },
 ];
 
 const BADGE_MAP = {
-    publicado:  { variant: "blue",    label: "Publicado"    },
-    negociando: { variant: "warning", label: "Negociando"   },
-    andamento:  { variant: "info",    label: "Em andamento" },
-    concluido:  { variant: "success", label: "Concluído"    },
+    PUBLICADO:  { variant: "blue",    label: "Publicado"    },
+    NEGOCIANDO: { variant: "warning", label: "Negociando"   },
+    CONTRATADO: { variant: "info",    label: "Contratado"   },
+    ANDAMENTO:  { variant: "info",    label: "Em andamento" },
+    FINALIZADO: { variant: "success", label: "Finalizado"   },
 };
-
-// ─────────────────────────────────────────────
-// Mock de dados — substituir por chamada à API
-// ─────────────────────────────────────────────
-
-const MOCK_CLIENTE = [
-    { id: 1, titulo: "Instalação elétrica",          especialidade: "Eletricista", cidade: "Goiânia", estado: "GO", status: "publicado",  data: "2026-05-18T10:00:00", candidatos: 3, contraparte: null },
-    { id: 2, titulo: "Conserto de encanamento",      especialidade: "Encanador",   cidade: "Goiânia", estado: "GO", status: "negociando", data: "2026-05-17T08:00:00", candidatos: 1, contraparte: "João Silva" },
-    { id: 3, titulo: "Pintura da sala",              especialidade: "Pintor",      cidade: "Goiânia", estado: "GO", status: "andamento",  data: "2026-05-15T09:00:00", candidatos: 1, contraparte: "Carlos Matos" },
-    { id: 4, titulo: "Instalação de ar-condicionado",especialidade: "Eletricista", cidade: "Goiânia", estado: "GO", status: "concluido",  data: "2026-05-10T10:00:00", candidatos: 2, contraparte: "Rafael Souza" },
-];
-
-const MOCK_PROFISSIONAL = [
-    { id: 1, titulo: "Conserto de encanamento",      especialidade: "Encanador",   cidade: "Goiânia", estado: "GO", status: "negociando", data: "2026-05-18T08:00:00", candidatos: null, contraparte: "Maria Souza" },
-    { id: 2, titulo: "Pintura da sala",              especialidade: "Pintor",      cidade: "Goiânia", estado: "GO", status: "andamento",  data: "2026-05-15T09:00:00", candidatos: null, contraparte: "Pedro Lima" },
-    { id: 3, titulo: "Instalação elétrica",          especialidade: "Eletricista", cidade: "Goiânia", estado: "GO", status: "concluido",  data: "2026-05-10T10:00:00", candidatos: null, contraparte: "Ana Ferreira", avaliacao: 5 },
-    { id: 4, titulo: "Reparo no telhado",            especialidade: "Pedreiro",    cidade: "Goiânia", estado: "GO", status: "concluido",  data: "2026-05-05T10:00:00", candidatos: null, contraparte: "Lucas Pinto",  avaliacao: 4 },
-];
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
 
 function fmtData(iso) {
     return new Date(iso).toLocaleDateString("pt-BR", {
@@ -61,41 +34,23 @@ function fmtData(iso) {
     });
 }
 
-function Estrelas({ nota }) {
-    return (
-        <span style={{ display: "inline-flex", gap: 2 }}>
-      {[1, 2, 3, 4, 5].map(n => (
-          <span key={n} style={{ color: n <= nota ? "var(--clr-yellow)" : "var(--clr-border-mid)", fontSize: 13 }}>★</span>
-      ))}
-    </span>
-    );
-}
-
-// ─────────────────────────────────────────────
-// Ações por status e role
-// ─────────────────────────────────────────────
-
-function Acoes({ servico, role, navigate }) {
+function Acoes({ servico, role }) {
     const { status } = servico;
 
     if (role === "CLIENTE") {
-        if (status === "publicado")  return <Btn variant="secondary" size="sm">Ver candidatos</Btn>;
-        if (status === "negociando") return <Btn variant="secondary" size="sm">Ver conversa</Btn>;
-        if (status === "andamento")  return <Btn variant="secondary" size="sm">Acompanhar</Btn>;
-        if (status === "concluido")  return <Btn variant="secondary" size="sm">⭐ Avaliar profissional</Btn>;
+        if (status === "PUBLICADO")  return <Btn variant="secondary" size="sm">Ver candidatos</Btn>;
+        if (status === "NEGOCIANDO") return <Btn variant="secondary" size="sm">Ver conversa</Btn>;
+        if (status === "ANDAMENTO")  return <Btn variant="secondary" size="sm">Acompanhar</Btn>;
+        if (status === "FINALIZADO") return <Btn variant="secondary" size="sm">⭐ Avaliar profissional</Btn>;
     }
 
     if (role === "PROFISSIONAL") {
-        if (status === "negociando") return <Btn variant="secondary" size="sm">Ver conversa</Btn>;
-        if (status === "andamento")  return <Btn variant="primary"   size="sm">Marcar como concluído</Btn>;
+        if (status === "NEGOCIANDO") return <Btn variant="secondary" size="sm">Ver conversa</Btn>;
+        if (status === "ANDAMENTO")  return <Btn variant="primary" size="sm">Marcar como concluído</Btn>;
     }
 
     return null;
 }
-
-// ─────────────────────────────────────────────
-// Componente principal
-// ─────────────────────────────────────────────
 
 export default function MeusServicos() {
     const navigate = useNavigate();
@@ -103,15 +58,43 @@ export default function MeusServicos() {
     const { user } = useAuth();
 
     const isProfissional = user?.role === "PROFISSIONAL";
-    const tabs    = isProfissional ? TABS_PROFISSIONAL : TABS_CLIENTE;
-    const dados   = isProfissional ? MOCK_PROFISSIONAL : MOCK_CLIENTE;
+    const tabs = isProfissional ? TABS_PROFISSIONAL : TABS_CLIENTE;
 
-    const statusParam = searchParams.get("status");
-    const tabInicial  = tabs.find(t => t.key === statusParam)?.key || tabs[0].key;
+    const statusParam = searchParams.get("status")?.toUpperCase();
+    const tabInicial = tabs.find(t => t.key === statusParam)?.key || tabs[0].key;
     const [aba, setAba] = useState(tabInicial);
 
-    const filtrados = dados.filter(s => s.status === aba);
-    const tabAtual  = tabs.find(t => t.key === aba);
+    const [servicos, setServicos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [erro, setErro] = useState(null);
+
+    useEffect(() => {
+        if (!user?.id) return;
+        buscarServicos();
+    }, [user]);
+
+    async function buscarServicos() {
+        setLoading(true);
+        setErro(null);
+        try {
+            const endpoint = isProfissional
+                ? `/api/servicos/profissional/${user.id}`
+                : `/api/servicos/cliente/${user.id}`;
+            const { data } = await api.get(endpoint);
+            setServicos(data);
+        } catch {
+            setErro("Erro ao carregar serviços.");
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const filtrados = servicos.filter(s => s.status === aba);
+    const tabAtual = tabs.find(t => t.key === aba);
+
+    function contarPorStatus(status) {
+        return servicos.filter(s => s.status === status).length;
+    }
 
     return (
         <PageLayout
@@ -119,8 +102,6 @@ export default function MeusServicos() {
             subtitle={isProfissional ? "Seus atendimentos" : "Acompanhe seus serviços"}
             backPath="/home"
         >
-
-            {/* ── Botão novo serviço (só cliente) ── */}
             {!isProfissional && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "var(--sp-4)" }}>
                     <Btn variant="primary" size="sm" onClick={() => navigate("/novo-servico")}>
@@ -129,11 +110,10 @@ export default function MeusServicos() {
                 </div>
             )}
 
-            {/* ── Tabs ── */}
             <div style={{ display: "flex", gap: "var(--sp-2)", flexWrap: "wrap", marginBottom: "var(--sp-6)" }}>
                 {tabs.map(tab => {
                     const ativo = aba === tab.key;
-                    const count = dados.filter(s => s.status === tab.key).length;
+                    const count = contarPorStatus(tab.key);
                     return (
                         <button
                             key={tab.key}
@@ -144,8 +124,8 @@ export default function MeusServicos() {
                                 borderRadius: "var(--r-full)",
                                 border: "1.5px solid",
                                 borderColor: ativo ? "var(--clr-purple)" : "var(--clr-border)",
-                                background:  ativo ? "var(--clr-purple)" : "var(--clr-surface)",
-                                color:       ativo ? "#fff" : "var(--clr-text-mid)",
+                                background: ativo ? "var(--clr-purple)" : "var(--clr-surface)",
+                                color: ativo ? "#fff" : "var(--clr-text-mid)",
                                 fontWeight: 600, fontSize: 13, cursor: "pointer",
                                 transition: "all var(--t-fast)",
                             }}
@@ -154,20 +134,35 @@ export default function MeusServicos() {
                             {count > 0 && (
                                 <span style={{
                                     background: ativo ? "rgba(255,255,255,0.25)" : "var(--clr-purple-pale)",
-                                    color:      ativo ? "#fff" : "var(--clr-purple)",
+                                    color: ativo ? "#fff" : "var(--clr-purple)",
                                     borderRadius: "var(--r-full)",
                                     padding: "1px 7px", fontSize: 11, fontWeight: 700,
                                 }}>
-                  {count}
-                </span>
+                                    {count}
+                                </span>
                             )}
                         </button>
                     );
                 })}
             </div>
 
-            {/* ── Lista ── */}
-            {filtrados.length === 0 ? (
+            {loading && (
+                <div style={{ textAlign: "center", padding: "var(--sp-10)", color: "var(--clr-text-light)" }}>
+                    Carregando...
+                </div>
+            )}
+
+            {erro && (
+                <div style={{ textAlign: "center", padding: "var(--sp-6)", color: "var(--clr-red)" }}>
+                    {erro}
+                    <br />
+                    <Btn variant="secondary" size="sm" onClick={buscarServicos} style={{ marginTop: "var(--sp-3)" }}>
+                        Tentar novamente
+                    </Btn>
+                </div>
+            )}
+
+            {!loading && !erro && filtrados.length === 0 && (
                 <EmptyState
                     emoji={tabAtual?.emoji || "📋"}
                     title="Nenhum serviço aqui"
@@ -178,47 +173,52 @@ export default function MeusServicos() {
                             : <Btn variant="secondary" onClick={() => navigate("/home")}>Ver publicações</Btn>
                     }
                 />
-            ) : (
+            )}
+
+            {!loading && !erro && filtrados.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
                     {filtrados.map((s, i) => (
                         <div key={s.id} className={`wm-animate-fadeUp wm-delay-${Math.min(i + 1, 5)}`}>
                             <Card>
                                 <CardBody>
-                                    {/* Cabeçalho */}
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "var(--sp-3)", marginBottom: "var(--sp-3)" }}>
                                         <div>
                                             <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", flexWrap: "wrap", marginBottom: "var(--sp-1)" }}>
                                                 <h3 style={{ fontWeight: 700, color: "var(--clr-navy)", fontSize: 15 }}>{s.titulo}</h3>
-                                                <Badge variant={BADGE_MAP[s.status].variant}>{BADGE_MAP[s.status].label}</Badge>
+                                                <Badge variant={BADGE_MAP[s.status]?.variant}>
+                                                    {BADGE_MAP[s.status]?.label}
+                                                </Badge>
                                             </div>
                                             <p style={{ fontSize: 13, color: "var(--clr-text-light)" }}>
                                                 🔧 {s.especialidade}
                                                 &nbsp;·&nbsp;
                                                 📍 {s.cidade}/{s.estado}
                                                 &nbsp;·&nbsp;
-                                                📅 {fmtData(s.data)}
+                                                📅 {fmtData(s.dataCriacao)}
                                             </p>
                                         </div>
-                                        {s.avaliacao && <Estrelas nota={s.avaliacao} />}
                                     </div>
 
-                                    {/* Info contextual */}
                                     <div style={{ display: "flex", gap: "var(--sp-4)", flexWrap: "wrap", fontSize: 13, marginBottom: "var(--sp-4)" }}>
-                                        {s.contraparte && (
+                                        {!isProfissional && s.profissionalNome && (
                                             <span style={{ color: "var(--clr-text-mid)" }}>
-                        {isProfissional ? "👤 Cliente:" : "👷 Profissional:"} {s.contraparte}
-                      </span>
+                                                👷 Profissional: {s.profissionalNome}
+                                            </span>
                                         )}
-                                        {s.candidatos != null && s.candidatos > 0 && (
+                                        {isProfissional && s.clienteNome && (
                                             <span style={{ color: "var(--clr-text-mid)" }}>
-                        👥 {s.candidatos} candidato{s.candidatos !== 1 ? "s" : ""}
-                      </span>
+                                                👤 Cliente: {s.clienteNome}
+                                            </span>
+                                        )}
+                                        {s.descricao && (
+                                            <span style={{ color: "var(--clr-text-light)" }}>
+                                                {s.descricao}
+                                            </span>
                                         )}
                                     </div>
 
-                                    {/* Ações */}
                                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                                        <Acoes servico={s} role={user?.role} navigate={navigate} />
+                                        <Acoes servico={s} role={user?.role} />
                                     </div>
                                 </CardBody>
                             </Card>
@@ -226,7 +226,6 @@ export default function MeusServicos() {
                     ))}
                 </div>
             )}
-
         </PageLayout>
     );
 }
