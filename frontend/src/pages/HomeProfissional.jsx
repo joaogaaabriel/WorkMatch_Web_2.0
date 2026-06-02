@@ -17,7 +17,6 @@ import {
     Spinner,
     EmptyState
 } from "../components/ui";
-
 const API_URL = import.meta.env.VITE_API_URL;
 
 const URGENCIA_BADGE = {
@@ -80,8 +79,6 @@ export default function HomeProfissional() {
 
             const data = await response.json();
 
-            console.log("SERVIÇOS:", data);
-
             setPublicacoes(data);
 
         } catch (error) {
@@ -94,36 +91,40 @@ export default function HomeProfissional() {
             setLoading(false);
         }
     }
-
     async function handleCandidatar(servicoId) {
 
         try {
+            const response = await fetch(
+                `${API_URL}/api/candidaturas`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        servicoId,
+                        profissionalId: user.id,
+                    }),
+                }
+            );
 
-            setCandidatando(servicoId);
+            const data = await response.json();
 
-            // Exemplo futuro:
-            // await fetch(`${API_URL}/api/candidaturas`, {
-            //     method: "POST",
-            //     headers: {
-            //         "Content-Type": "application/json",
-            //     },
-            //     body: JSON.stringify({
-            //         servicoId,
-            //         profissionalId: user.id,
-            //     }),
-            // });
+            if (!response.ok) {
+                throw new Error(
+                    data.message || "Erro ao candidatar"
+                );
+            }
 
-            alert("Candidatura enviada com sucesso!");
+            alert("Candidatura enviada!");
+
+            navigate(`/chat/${servicoId}`);
 
         } catch (error) {
 
             console.error(error);
 
-            alert("Erro ao enviar candidatura.");
-
-        } finally {
-
-            setCandidatando(null);
+            alert(error.message);
         }
     }
 

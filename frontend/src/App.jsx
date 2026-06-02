@@ -15,6 +15,8 @@ import NovoServico            from "./pages/NovoServico";
 import PerfilProfissional     from "./pages/PerfilProfissional";
 import ConfiguracaoPerfilPage from "./pages/ConfiguracaoPerfilPage";
 import SuporteClientePage     from "./pages/SuporteClientePage";
+import CandidatosServico from "./pages/CandidatosServico";
+import ChatServico from "./pages/ChatServico";
 
 import "./styles.css";
 
@@ -68,6 +70,29 @@ export default function App() {
             <Route path="/suporte" element={
               <ProtectedRoute><SuporteClientePage /></ProtectedRoute>
             } />
+
+            <Route
+                path="/servico/:servicoId/candidatos"
+                element={
+                  <ProtectedRoute roles={["CLIENTE"]}>
+                    <CandidatosServico />
+                  </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/chat/:servicoId/:profissionalId"
+                element={
+                  <ProtectedRoute>
+                    <ChatServico />
+                  </ProtectedRoute>
+                }
+            />
+
+            <Route
+                path="/chat/:servicoId"
+                element={<ChatServico />}
+            />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/inicio" replace />} />
