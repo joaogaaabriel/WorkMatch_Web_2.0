@@ -94,6 +94,11 @@ export default function App() {
                 element={<ChatServico />}
             />
 
+            <Route
+                path="/candidatos/:servicoId"
+                element={<CandidatosServico />}
+            />
+
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/inicio" replace />} />
           </Routes>

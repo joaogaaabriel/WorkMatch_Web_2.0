@@ -9,14 +9,10 @@ import java.util.UUID;
 public interface CandidatureRepository
         extends JpaRepository<Candidature, UUID> {
 
-    List<Candidature> findByServico_Id(UUID servicoId);
+    List<Candidature> findByServicoId(UUID servicoId);
 
-    boolean existsByServico_IdAndProfissional_Id(
+    boolean existsByServicoIdAndProfissionalId(
             UUID servicoId,
             UUID profissionalId
     );
-
-    boolean existsByServicoIdAndProfissionalId(UUID servicoId, UUID remetenteId);
-
-    List<Candidature> findByServicoId(UUID servicoId);
 }

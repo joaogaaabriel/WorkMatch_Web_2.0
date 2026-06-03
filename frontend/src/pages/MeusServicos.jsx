@@ -34,11 +34,22 @@ function fmtData(iso) {
     });
 }
 
-function Acoes({ servico, role }) {
+function Acoes({ servico, role, navigate }) {
     const { status } = servico;
 
     if (role === "CLIENTE") {
-        if (status === "PUBLICADO")  return <Btn variant="secondary" size="sm">Ver candidatos</Btn>;
+        if (status === "PUBLICADO")
+            return (
+                <Btn
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                        navigate(`/candidatos/${servico.id}`)
+                    }
+                >
+                    Ver candidatos
+                </Btn>
+            );
         if (status === "NEGOCIANDO") return <Btn variant="secondary" size="sm">Ver conversa</Btn>;
         if (status === "ANDAMENTO")  return <Btn variant="secondary" size="sm">Acompanhar</Btn>;
         if (status === "FINALIZADO") return <Btn variant="secondary" size="sm">⭐ Avaliar profissional</Btn>;
@@ -218,7 +229,11 @@ export default function MeusServicos() {
                                     </div>
 
                                     <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                                        <Acoes servico={s} role={user?.role} />
+                                        <Acoes
+                                            servico={s}
+                                            role={user?.role}
+                                            navigate={navigate}
+                                        />
                                     </div>
                                 </CardBody>
                             </Card>

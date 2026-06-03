@@ -7,6 +7,10 @@ public record CandidatureResponse(
         UUID id,
         UUID servicoId,
         UUID profissionalId,
+        String nome,
+        String especialidade,
+        String cidade,
+        String estado,
         LocalDateTime criadoEm
 ) {
 }

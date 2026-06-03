@@ -95,22 +95,37 @@ public class MenssengerServiceImpl extends MenssengerService {
     }
 
     @Override
-    public List<MenssengerResponse> listarPorServico(UUID servicoId) {
+    public List<MenssengerResponse> listarPorServico(
+            UUID servicoId
+    ) {
 
         return repository
                 .findByServicoIdOrderByEnviadoEmAsc(servicoId)
                 .stream()
                 .map(m -> {
 
-                    MenssengerResponse r = new MenssengerResponse();
+                    MenssengerResponse r =
+                            new MenssengerResponse();
 
                     r.setId(m.getId());
-                    r.setServicoId(m.getServico().getId());
-                    r.setRemetenteId(m.getRemetente().getId());
-                    r.setRemetenteNome(m.getRemetente().getNome());
-                    r.setDestinatarioId(m.getDestinatario().getId());
-                    r.setConteudo(m.getConteudo());
-                    r.setEnviadoEm(m.getEnviadoEm());
+                    r.setServicoId(
+                            m.getServico().getId()
+                    );
+                    r.setRemetenteId(
+                            m.getRemetente().getId()
+                    );
+                    r.setRemetenteNome(
+                            m.getRemetente().getNome()
+                    );
+                    r.setDestinatarioId(
+                            m.getDestinatario().getId()
+                    );
+                    r.setConteudo(
+                            m.getConteudo()
+                    );
+                    r.setEnviadoEm(
+                            m.getEnviadoEm()
+                    );
 
                     return r;
                 })

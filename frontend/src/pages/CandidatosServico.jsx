@@ -1,128 +1,157 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
+import api from "../services/api";
 import PageLayout from "../components/PageLayout";
-import { Card, CardBody, Btn, Spinner, EmptyState } from "../components/ui";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import {
+    Btn,
+    Card,
+    CardBody,
+    EmptyState
+} from "../components/ui";
 
 export default function CandidatosServico() {
 
     const { servicoId } = useParams();
-
     const navigate = useNavigate();
 
     const [candidatos, setCandidatos] = useState([]);
-
     const [loading, setLoading] = useState(true);
+    const [erro, setErro] = useState(null);
 
     useEffect(() => {
-        carregar();
-    }, []);
+        if (servicoId) {
+            carregar();
+        }
+    }, [servicoId]);
 
     async function carregar() {
 
         try {
 
-            const response = await fetch(
-                `${API_URL}/api/candidaturas/servico/${servicoId}`
+            setLoading(true);
+            setErro(null);
+
+            const response = await api.get(
+                `/api/candidaturas/servico/${servicoId}`
+
             );
 
-            const data = await response.json();
-
-            setCandidatos(data);
+            setCandidatos(response.data || []);
 
         } catch (error) {
 
             console.error(error);
 
+            setErro(
+                error?.response?.data?.message ||
+                "Erro ao carregar candidatos."
+            );
+
         } finally {
 
             setLoading(false);
+
         }
     }
 
     return (
         <PageLayout
             title="Candidatos"
-            subtitle="Profissionais interessados"
+            subtitle="Profissionais interessados no serviço"
             backPath="/meus-servicos"
         >
 
-            {loading && <Spinner />}
-
-            {!loading && candidatos.length === 0 && (
-                <EmptyState
-                    emoji="👷"
-                    title="Nenhum candidato"
-                    description="Ainda não existem profissionais interessados."
-                />
+            {loading && (
+                <div
+                    style={{
+                        textAlign: "center",
+                        padding: "40px"
+                    }}
+                >
+                    Carregando candidatos...
+                </div>
             )}
 
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--sp-4)"
-                }}
-            >
-                {candidatos.map(candidato => (
+            {!loading && erro && (
+                <div
+                    style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        color: "red"
+                    }}
+                >
+                    <p>{erro}</p>
 
-                    <Card key={candidato.id}>
+                    <Btn
+                        variant="secondary"
+                        onClick={carregar}
+                    >
+                        Tentar novamente
+                    </Btn>
+                </div>
+            )}
 
-                        <CardBody>
+            {!loading &&
+                !erro &&
+                candidatos.length === 0 && (
 
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    flexWrap: "wrap",
-                                    gap: "var(--sp-3)"
-                                }}
-                            >
+                    <EmptyState
+                        emoji="👷"
+                        title="Nenhum candidato"
+                        description="Ainda não existem profissionais interessados neste serviço."
+                    />
 
-                                <div>
+                )}
 
-                                    <h3
-                                        style={{
-                                            color: "var(--clr-navy)",
-                                            marginBottom: 6
-                                        }}
-                                    >
-                                        {candidato.profissionalNome}
+            {!loading &&
+                !erro &&
+                candidatos.length > 0 && (
+
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "16px"
+                        }}
+                    >
+
+                        {candidatos.map((candidato) => (
+
+                            <Card key={candidato.id}>
+                                <CardBody>
+
+                                    <h3>
+                                        👷 {candidato.nome}
                                     </h3>
 
-                                    <p
-                                        style={{
-                                            color: "var(--clr-text-mid)",
-                                            fontSize: 14
-                                        }}
-                                    >
-                                        {candidato.especialidade}
+                                    <p>
+                                        🔧 {candidato.especialidade}
                                     </p>
 
-                                </div>
+                                    <p>
+                                        📍 {candidato.cidade}/{candidato.estado}
+                                    </p>
 
-                                <Btn
-                                    variant="primary"
-                                    onClick={() =>
-                                        navigate(
-                                            `/chat/${servicoId}/${candidato.profissionalId}`
-                                        )
-                                    }
-                                >
-                                    💬 Abrir conversa
-                                </Btn>
+                                    <Btn
+                                        variant="primary"
+                                        onClick={() =>
+                                            navigate(
+                                                `/chat/${servicoId}?profissional=${candidato.profissionalId}`
+                                            )
+                                        }
+                                    >
+                                        💬 Abrir conversa
+                                    </Btn>
 
-                            </div>
+                                </CardBody>
+                            </Card>
 
-                        </CardBody>
+                        ))}
 
-                    </Card>
+                    </div>
 
-                ))}
-            </div>
+                )}
 
         </PageLayout>
     );

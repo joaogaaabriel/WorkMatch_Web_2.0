@@ -11,15 +11,27 @@ public interface ServicoRepository extends JpaRepository<Servico, UUID> {
 
     List<Servico> findByClienteId(UUID clienteId);
 
-    List<Servico> findByClienteIdAndStatus(UUID clienteId, StatusServico status);
+    List<Servico> findByClienteIdAndStatus(
+            UUID clienteId,
+            StatusServico status
+    );
 
     List<Servico> findByProfissionalId(UUID profissionalId);
 
-    List<Servico> findByProfissionalIdAndStatus(UUID profissionalId, StatusServico status);
+    List<Servico> findByProfissionalIdAndStatus(
+            UUID profissionalId,
+            StatusServico status
+    );
 
     List<Servico> findByStatus(StatusServico status);
 
-    List<Servico> findByEspecialidadeContainingIgnoreCaseAndStatus(String especialidade, StatusServico status);
+    List<Servico> findByEspecialidadeContainingIgnoreCaseAndStatus(
+            String especialidade,
+            StatusServico status
+    );
 
-    List<Servico> findByCidadeContainingIgnoreCaseAndStatus(String cidade, StatusServico status);
+    List<Servico> findByCidadeContainingIgnoreCaseAndStatus(
+            String cidade,
+            StatusServico status
+    );
 }

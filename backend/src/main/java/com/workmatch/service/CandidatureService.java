@@ -69,7 +69,6 @@ public class CandidatureService {
 
         candidatura = candidatureRepository.save(candidatura);
 
-        // mensagem automática após candidatura
         MenssengerDTO mensagem = new MenssengerDTO();
 
         mensagem.setServicoId(servico.getId());
@@ -89,11 +88,29 @@ public class CandidatureService {
                 candidatura.getId(),
                 servico.getId(),
                 profissional.getId(),
+                profissional.getNome(),
+                profissional.getEspecialidade(),
+                profissional.getCidade(),
+                profissional.getEstado(),
                 candidatura.getCriadoEm()
         );
     }
 
-    public List<Candidature> listarPorServico(UUID servicoId) {
-        return candidatureRepository.findByServicoId(servicoId);
+    public List<CandidatureResponse> listarPorServico(UUID servicoId) {
+
+        return candidatureRepository
+                .findByServicoId(servicoId)
+                .stream()
+                .map(c -> new CandidatureResponse(
+                        c.getId(),
+                        c.getServico().getId(),
+                        c.getProfissional().getId(),
+                        c.getProfissional().getNome(),
+                        c.getProfissional().getEspecialidade(),
+                        c.getProfissional().getCidade(),
+                        c.getProfissional().getEstado(),
+                        c.getCriadoEm()
+                ))
+                .toList();
     }
 }
