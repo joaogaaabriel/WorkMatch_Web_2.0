@@ -11,8 +11,10 @@ import com.workmatch.repository.CandidatureRepository;
 import com.workmatch.repository.ProfissionalRepository;
 import com.workmatch.repository.ServicoRepository;
 import com.workmatch.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,210 +22,117 @@ import java.util.UUID;
 @Service
 public class ServicoService {
 
-    private final ServicoRepository servicoRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final ServicoRepository      servicoRepository;
+    private final UsuarioRepository      usuarioRepository;
     private final ProfissionalRepository profissionalRepository;
-    private final MapperService mapper;
-    private final CandidatureRepository candidatureRepository;
+    private final MapperService          mapper;
+    private final CandidatureRepository  candidatureRepository;
 
-    public ServicoService(
-            ServicoRepository servicoRepository,
-            UsuarioRepository usuarioRepository,
-            ProfissionalRepository profissionalRepository,
-            MapperService mapper,
-            CandidatureRepository candidatureRepository
-    ) {
-        this.servicoRepository = servicoRepository;
-        this.usuarioRepository = usuarioRepository;
+    public ServicoService(ServicoRepository servicoRepository,
+                          UsuarioRepository usuarioRepository,
+                          ProfissionalRepository profissionalRepository,
+                          MapperService mapper,
+                          CandidatureRepository candidatureRepository) {
+        this.servicoRepository      = servicoRepository;
+        this.usuarioRepository      = usuarioRepository;
         this.profissionalRepository = profissionalRepository;
-        this.mapper = mapper;
-        this.candidatureRepository = candidatureRepository;
+        this.mapper                 = mapper;
+        this.candidatureRepository  = candidatureRepository;
     }
 
     @Transactional
     public ServicoResponse criar(ServicoDTO dto) {
-
-        Usuario cliente = usuarioRepository
-                .findById(dto.clienteId())
-                .orElseThrow(() ->
-                        new IllegalArgumentException("Cliente não encontrado"));
+        Usuario cliente = usuarioRepository.findById(dto.clienteId())
+                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
 
         Servico servico = new Servico();
-
         servico.setTitulo(dto.titulo());
         servico.setEspecialidade(dto.especialidade());
         servico.setDescricao(dto.descricao());
+        servico.setCidade(dto.cidade());   // B08 corrigido
+        servico.setEstado(dto.estado());   // B08 corrigido
         servico.setCliente(cliente);
         servico.setStatus(StatusServico.PUBLICADO);
 
-        return mapper.toResponse(
-                servicoRepository.save(servico)
-        );
+        return mapper.toResponse(servicoRepository.save(servico));
     }
 
     public ServicoResponse buscarPorId(UUID id) {
-        return mapper.toResponse(
-                buscarEntidade(id)
-        );
+        return mapper.toResponse(buscarEntidade(id));
     }
 
-    public List<ServicoResponse> listarPorCliente(
-            UUID clienteId,
-            StatusServico status
-    ) {
-
+    public List<ServicoResponse> listarPorCliente(UUID clienteId, StatusServico status) {
         List<Servico> servicos = status != null
                 ? servicoRepository.findByClienteIdAndStatus(clienteId, status)
                 : servicoRepository.findByClienteId(clienteId);
-
-        return servicos
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        return servicos.stream().map(mapper::toResponse).toList();
     }
 
-    public List<ServicoResponse> listarPorProfissional(
-            UUID profissionalId,
-            StatusServico status
-    ) {
-
+    public List<ServicoResponse> listarPorProfissional(UUID profissionalId, StatusServico status) {
         List<Servico> servicos = status != null
-                ? servicoRepository.findByProfissionalIdAndStatus(
-                profissionalId,
-                status
-        )
+                ? servicoRepository.findByProfissionalIdAndStatus(profissionalId, status)
                 : servicoRepository.findByProfissionalId(profissionalId);
-
-        return servicos
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        return servicos.stream().map(mapper::toResponse).toList();
     }
 
-    public List<ServicoResponse> listarPublicados(
-            String especialidade,
-            String cidade
-    ) {
+    // D14 corrigido — agora filtra por especialidade E cidade quando ambos fornecidos
+    public List<ServicoResponse> listarPublicados(String especialidade, String cidade) {
+        List<Servico> servicos;
 
-        if (especialidade != null) {
-            return servicoRepository
-                    .findByEspecialidadeContainingIgnoreCaseAndStatus(
-                            especialidade,
-                            StatusServico.PUBLICADO
-                    )
-                    .stream()
-                    .map(mapper::toResponse)
-                    .toList();
+        if (especialidade != null && cidade != null) {
+            servicos = servicoRepository
+                    .findByEspecialidadeContainingIgnoreCaseAndCidadeContainingIgnoreCaseAndStatus(
+                            especialidade, cidade, StatusServico.PUBLICADO);
+        } else if (especialidade != null) {
+            servicos = servicoRepository
+                    .findByEspecialidadeContainingIgnoreCaseAndStatus(especialidade, StatusServico.PUBLICADO);
+        } else if (cidade != null) {
+            servicos = servicoRepository
+                    .findByCidadeContainingIgnoreCaseAndStatus(cidade, StatusServico.PUBLICADO);
+        } else {
+            servicos = servicoRepository.findByStatus(StatusServico.PUBLICADO);
         }
 
-        if (cidade != null) {
-            return servicoRepository
-                    .findByCidadeContainingIgnoreCaseAndStatus(
-                            cidade,
-                            StatusServico.PUBLICADO
-                    )
-                    .stream()
-                    .map(mapper::toResponse)
-                    .toList();
-        }
-
-        return servicoRepository
-                .findByStatus(StatusServico.PUBLICADO)
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+        return servicos.stream().map(mapper::toResponse).toList();
     }
 
     @Transactional
-    public ServicoResponse avancarStatus(
-            UUID id,
-            UUID profissionalId
-    ) {
-
+    public ServicoResponse avancarStatus(UUID id, UUID profissionalId) {
         Servico servico = buscarEntidade(id);
+        StatusServico proximo = proximoStatus(servico.getStatus());
 
-        StatusServico proximo =
-                proximoStatus(servico.getStatus());
-
-        if (
-                proximo == StatusServico.NEGOCIANDO ||
-                        proximo == StatusServico.CONTRATADO
-        ) {
-
-            Profissional profissional =
-                    profissionalRepository
-                            .findById(profissionalId)
-                            .orElseThrow(() ->
-                                    new IllegalArgumentException(
-                                            "Profissional não encontrado"
-                                    ));
-
+        if (proximo == StatusServico.NEGOCIANDO || proximo == StatusServico.CONTRATADO) {
+            Profissional profissional = profissionalRepository.findById(profissionalId)
+                    .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
             servico.setProfissional(profissional);
         }
 
         servico.setStatus(proximo);
+        return mapper.toResponse(servicoRepository.save(servico));
+    }
 
-        return mapper.toResponse(
-                servicoRepository.save(servico)
-        );
+    @Transactional
+    public ServicoResponse arquivar(UUID id) {
+        Servico servico = buscarEntidade(id);
+        if (servico.getStatus() == StatusServico.FINALIZADO
+                || servico.getStatus() == StatusServico.ARQUIVADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Serviço já encerrado");
+        }
+        servico.setStatus(StatusServico.ARQUIVADO);
+        return mapper.toResponse(servicoRepository.save(servico));
     }
 
     @Transactional
     public void cancelar(UUID id) {
-
         Servico servico = buscarEntidade(id);
-
         if (servico.getStatus() == StatusServico.FINALIZADO) {
-            throw new IllegalStateException(
-                    "Serviço finalizado não pode ser cancelado"
-            );
+            throw new IllegalStateException("Serviço finalizado não pode ser cancelado");
         }
-
         servicoRepository.deleteById(id);
     }
 
-    private Servico buscarEntidade(UUID id) {
-
-        return servicoRepository
-                .findById(id)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Serviço não encontrado"
-                        ));
-    }
-
-    private StatusServico proximoStatus(
-            StatusServico atual
-    ) {
-
-        return switch (atual) {
-
-            case PUBLICADO ->
-                    StatusServico.NEGOCIANDO;
-
-            case NEGOCIANDO ->
-                    StatusServico.CONTRATADO;
-
-            case CONTRATADO ->
-                    StatusServico.ANDAMENTO;
-
-            case ANDAMENTO ->
-                    StatusServico.FINALIZADO;
-
-            case FINALIZADO ->
-                    throw new IllegalStateException(
-                            "Serviço já finalizado"
-                    );
-        };
-    }
-
-    public List<CandidatureResponse> listarPorServico(
-            UUID servicoId
-    ) {
-
-        return candidatureRepository
-                .findByServicoId(servicoId)
-                .stream()
+    public List<CandidatureResponse> listarPorServico(UUID servicoId) {
+        return candidatureRepository.findByServicoId(servicoId).stream()
                 .map(c -> new CandidatureResponse(
                         c.getId(),
                         c.getServico().getId(),
@@ -232,8 +141,24 @@ public class ServicoService {
                         c.getProfissional().getEspecialidade(),
                         c.getProfissional().getCidade(),
                         c.getProfissional().getEstado(),
-                        c.getCriadoEm()
-                ))
+                        c.getCriadoEm()))
                 .toList();
+    }
+
+    private Servico buscarEntidade(UUID id) {
+        return servicoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado"));
+    }
+
+    private StatusServico proximoStatus(StatusServico atual) {
+        return switch (atual) {
+            case PUBLICADO  -> StatusServico.NEGOCIANDO;
+            case NEGOCIANDO -> StatusServico.CONTRATADO;
+            case CONTRATADO -> StatusServico.ANDAMENTO;
+            case ANDAMENTO  -> StatusServico.FINALIZADO;
+            case FINALIZADO -> throw new IllegalStateException("Serviço já finalizado");
+            case ARQUIVADO  -> throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Serviço arquivado não pode ter status avançado");
+        };
     }
 }

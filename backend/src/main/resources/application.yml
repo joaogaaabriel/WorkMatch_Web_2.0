@@ -3,8 +3,6 @@ spring:
     name: workmatch-backend
 
   datasource:
-    # SPRING_DATASOURCE_URL é injetada pelo Docker Compose (host = db)
-    # Fallback para desenvolvimento local: localhost
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/workmatch}
     username: ${DB_USER:postgres}
     password: ${DB_PASS:postgres}
@@ -25,6 +23,13 @@ keycloak:
   server-url: ${KEYCLOAK_URL:http://localhost:9090}
   realm: ${KEYCLOAK_REALM:workmatch}
   client-id: ${KEYCLOAK_CLIENT_ID:workmatch-develop}
-  client-secret: ${KEYCLOAK_CLIENT_SECRET:kb9YW8mIcRMUWnw2AvDxtk9Bk6fR0X8a}
+  # SEC-03 corrigido — sem valor default exposto no repositório
+  # a aplicação falha no startup se KEYCLOAK_CLIENT_SECRET não estiver definida
+  client-secret: ${KEYCLOAK_CLIENT_SECRET}
   admin-username: ${KEYCLOAK_ADMIN_USER:admin}
   admin-password: ${KEYCLOAK_ADMIN_PASS:admin}
+
+# Groq — chave de API para o assistente de IA (nunca vai ao frontend)
+groq:
+  api:
+    key: ${GROQ_API_KEY}

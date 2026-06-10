@@ -1,135 +1,183 @@
-/**
- * WorkMatch — pages/CandidatosServico.jsx
- * CEL Design System v3.0
- *
- * Lógica 100% preservada:
- *  - carregar() / fetch candidaturas
- *  - navigate para chat
- *  - candidatos state / loading state
- *
- * Alterações visuais:
- *  - emoji="👷" EmptyState → icon SVG HardHat
- *  - "💬 Abrir conversa" → SVG MessageSquare + texto
- */
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { Btn, Card, CardBody, Badge, Spinner, EmptyState } from "../components/ui.jsx";
+import { useToast } from "../hooks/useToast.js";
+import api from "../services/api.js"; // B12 corrigido — substituído fetch nativo
 
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams }     from "react-router-dom";
-import PageLayout                     from "../components/PageLayout";
-import { Card, CardBody, Btn, Spinner, EmptyState } from "../components/ui";
+// ─── Ícones ───────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-/* =========================================================
-   ÍCONES SVG — inline, Lucide-style
-========================================================= */
-
-const IcoHardHat = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/>
-    <path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/>
-    <path d="M4 15v-3a8 8 0 0 1 16 0v3"/>
-  </svg>
+const IconUsers = () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
 );
 
-const IcoMessageSquare = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-  </svg>
+const IconMapPin = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="3" />
+    </svg>
 );
 
-/* =========================================================
-   COMPONENTE
-========================================================= */
+const IconMessage = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+);
+
+const IconCheck = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 6 9 17l-5-5" />
+    </svg>
+);
+
+const IconArrow = () => (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 12h14M12 5l7 7-7 7" />
+    </svg>
+);
 
 export default function CandidatosServico() {
-  const { servicoId } = useParams();
-  const navigate      = useNavigate();
+    const { servicoId }   = useParams();
+    const { user }        = useAuth();
+    const navigate        = useNavigate();
+    const { showToast }   = useToast();
 
-  const [candidatos, setCandidatos] = useState([]);
-  const [loading,    setLoading]    = useState(true);
+    const [candidatos,   setCandidatos]   = useState([]);
+    const [carregando,   setCarregando]   = useState(true);
+    const [contratando,  setContratando]  = useState(null);
 
-  useEffect(() => { carregar(); }, []);
+    const carregar = useCallback(async () => {
+        setCarregando(true);
+        try {
+            // B12 corrigido — api envia Bearer token automaticamente
+            const { data } = await api.get(`/api/candidaturas/servico/${servicoId}`);
+            setCandidatos(data);
+        } catch {
+            showToast("Erro ao carregar candidatos.", "danger");
+        } finally {
+            setCarregando(false);
+        }
+    }, [servicoId]);
 
-  /* ── Lógica preservada integralmente ── */
+    useEffect(() => { carregar(); }, [carregar]);
 
-  async function carregar() {
-    try {
-      const response = await fetch(`${API_URL}/api/candidaturas/servico/${servicoId}`);
-      const data     = await response.json();
-      setCandidatos(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
+    const contratar = async (profissionalId) => {
+        setContratando(profissionalId);
+        try {
+            await api.patch(`/api/servicos/${servicoId}/avancar?profissionalId=${profissionalId}`);
+            showToast("Profissional selecionado! Negociação iniciada.", "success");
+            navigate(`/chat/${servicoId}`);
+        } catch (e) {
+            const msg = e?.response?.data?.message || "Erro ao selecionar profissional.";
+            showToast(msg, "danger");
+        } finally {
+            setContratando(null);
+        }
+    };
 
-  return (
-    <PageLayout
-      title="Candidatos"
-      subtitle="Profissionais interessados"
-      backPath="/meus-servicos"
-    >
+    const abrirChat = (profissionalId) => {
+        navigate(`/chat/${servicoId}/${profissionalId}`);
+    };
 
-      {/* Loading — Spinner CEL centralizado */}
-      {loading && <Spinner size="md" center />}
+    return (
+        <div style={{ minHeight: "100vh", background: "var(--clr-bg, #f5f7fa)" }}>
 
-      {/* Estado vazio — icon SVG, sem emoji 👷 */}
-      {!loading && candidatos.length === 0 && (
-        <EmptyState
-          icon={<IcoHardHat />}
-          title="Nenhum candidato"
-          description="Ainda não existem profissionais interessados neste serviço."
-        />
-      )}
+            {/* Header */}
+            <header style={{
+                background:  "linear-gradient(135deg, #0A2F5A 0%, #1E5FAF 100%)",
+                padding:     "20px 24px",
+                boxShadow:   "0 2px 12px rgba(10,47,90,0.18)"
+            }}>
+                <h1 style={{
+                    margin: 0, color: "#fff", fontSize: "1.1rem", fontWeight: 600,
+                    fontFamily: "var(--font-display, 'DM Serif Display', serif)"
+                }}>
+                    Candidatos
+                </h1>
+                <p style={{ margin: "2px 0 0", color: "rgba(255,255,255,0.7)", fontSize: "0.82rem" }}>
+                    Selecione o profissional para iniciar a negociação
+                </p>
+            </header>
 
-      {/* Lista de candidatos */}
-      {!loading && candidatos.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-          {candidatos.map((candidato, i) => (
-            <div key={candidato.id} className={`wm-animate-fadeUp wm-delay-${Math.min(i + 1, 5)}`}>
-              <Card>
-                <CardBody>
-                  <div style={{
-                    display:        "flex",
-                    justifyContent: "space-between",
-                    alignItems:     "center",
-                    flexWrap:       "wrap",
-                    gap:            "var(--sp-3)",
-                  }}>
+            <div style={{ maxWidth: "760px", margin: "0 auto", padding: "24px 16px" }}>
+                {carregando ? (
+                    <Spinner center />
+                ) : candidatos.length === 0 ? (
+                    <EmptyState
+                        icon={<IconUsers />}
+                        title="Nenhum candidato ainda"
+                        description="Aguarde profissionais se candidatarem ao seu serviço."
+                    />
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        {candidatos.map(c => (
+                            <Card key={c.id} style={{ borderRadius: "14px", animation: "wmPageIn .25s ease" }}>
+                                <CardBody style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
 
-                    {/* Dados do profissional */}
-                    <div>
-                      <h3 style={{ color: "var(--clr-navy)", fontWeight: 700, marginBottom: 6, fontSize: 15 }}>
-                        {candidato.profissionalNome}
-                      </h3>
-                      {candidato.especialidade && (
-                        <p style={{ color: "var(--clr-text-mid)", fontSize: 14 }}>
-                          {candidato.especialidade}
-                        </p>
-                      )}
+                                    {/* Nome + especialidade */}
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
+                                        <div>
+                                            <span style={{ fontWeight: 600, fontSize: "0.98rem", color: "var(--clr-text, #1e293b)" }}>
+                                                {c.nome}
+                                            </span>
+                                            <div style={{ display: "flex", gap: "6px", marginTop: "4px", flexWrap: "wrap" }}>
+                                                <Badge variant="blue">{c.especialidade}</Badge>
+                                                {c.cidade && (
+                                                    <span style={{ display: "flex", alignItems: "center", gap: "3px", fontSize: "0.8rem", color: "var(--clr-muted, #64748b)" }}>
+                                                        <IconMapPin /> {c.cidade}{c.estado ? ` — ${c.estado}` : ""}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Ações */}
+                                    <div style={{
+                                        display: "flex", gap: "8px", flexWrap: "wrap",
+                                        paddingTop: "8px",
+                                        borderTop: "1px solid var(--clr-border, #e2e8f0)"
+                                    }}>
+                                        <Btn
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => abrirChat(c.profissionalId)}
+                                        >
+                                            <IconMessage /> &nbsp;Conversar
+                                        </Btn>
+                                        <Btn
+                                            variant="primary"
+                                            size="sm"
+                                            onClick={() => contratar(c.profissionalId)}
+                                            disabled={contratando === c.profissionalId}
+                                        >
+                                            {contratando === c.profissionalId
+                                                ? <Spinner />
+                                                : <><IconCheck /> &nbsp;Selecionar profissional</>
+                                            }
+                                        </Btn>
+                                    </div>
+                                </CardBody>
+                            </Card>
+                        ))}
                     </div>
+                )}
 
-                    {/* Botão conversa — SVG MessageSquare, sem 💬 */}
-                    <Btn
-                      variant="primary"
-                      onClick={() => navigate(`/chat/${servicoId}/${candidato.profissionalId}`)}
-                    >
-                      <IcoMessageSquare /> Abrir conversa
+                {/* Voltar */}
+                <div style={{ marginTop: "24px" }}>
+                    <Btn variant="secondary" size="sm" onClick={() => navigate(-1)}>
+                        ← Voltar
                     </Btn>
-
-                  </div>
-                </CardBody>
-              </Card>
+                </div>
             </div>
-          ))}
         </div>
-      )}
-
-    </PageLayout>
-  );
+    );
 }

@@ -21,22 +21,12 @@ public class KeycloakLoginClient {
 
     public KeycloakLoginClient(WebClient.Builder webClientBuilder,
                                KeycloakProperties properties) {
-        this.webClient = webClientBuilder.build();
+        this.webClient  = webClientBuilder.build();
         this.properties = properties;
     }
 
     public KeycloakTokenResponse login(String login, String senha) {
-
-        // ─── DEBUG: mostra exatamente o que está sendo enviado ao Keycloak ───
-        log.info("=== KEYCLOAK LOGIN DEBUG ===");
-        log.info("Token URL   : {}", properties.getTokenUrl());
-        log.info("Client ID   : {}", properties.getClientId());
-        log.info("Client Secret (primeiros 6): {}...",
-                properties.getClientSecret() != null && properties.getClientSecret().length() > 6
-                        ? properties.getClientSecret().substring(0, 6)
-                        : properties.getClientSecret());
-        log.info("Username    : {}", login);
-        log.info("============================");
+        // D12 corrigido — bloco de debug com fragmento do client secret removido
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type",    "password");
