@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -49,7 +49,6 @@ const STATUS_LABEL = {
   CONTRATADO: "Contratado",
   ANDAMENTO:  "Em andamento",
   FINALIZADO: "Finalizado",
-  ARQUIVADO:  "Arquivado",
 };
 
 const STATUS_CLASS = {
@@ -58,74 +57,77 @@ const STATUS_CLASS = {
   CONTRATADO: "wm-badge--green",
   ANDAMENTO:  "wm-badge--green",
   FINALIZADO: "wm-badge--gray",
-  ARQUIVADO:  "wm-badge--gray",
 };
+
+const PAGE_SIZE = 20;
 
 export default function HomeProfissional() {
   const { user }  = useAuth();
   const navigate  = useNavigate();
   const { showToast, Toast } = useToast();
 
-  const [servicos,       setServicos]       = useState([]);
-  const [candidatados,   setCandidatados]   = useState(new Set());
-  const [carregando,     setCarregando]     = useState(true);
-  const [enviando,       setEnviando]       = useState(null); // id do serviço em processo
-  const [filtroEsp,      setFiltroEsp]      = useState("Todas");
-  const [filtroCidade,   setFiltroCidade]   = useState("");
+  const [servicos,     setServicos]     = useState([]);
+  const [paginacao,    setPaginacao]    = useState({ page: 0, totalPages: 1, last: true });
+  const [candidatados, setCandidatados] = useState(new Set());
+  const [carregando,   setCarregando]   = useState(true);
+  const [enviando,     setEnviando]     = useState(null);
+  const [filtroEsp,    setFiltroEsp]    = useState("Todas");
+  const [filtroCidade, setFiltroCidade] = useState("");
+  const [pagina,       setPagina]       = useState(0);
 
-  // Carrega serviços publicados e candidaturas já feitas
-  useEffect(() => {
+  const carregarServicos = useCallback(async (pg = 0, resetar = false) => {
     if (!user?.id) return;
+    setCarregando(true);
 
-    const params = {};
-    if (filtroEsp && filtroEsp !== "Todas") params.especialidade = filtroEsp;
-    if (filtroCidade.trim())                params.cidade        = filtroCidade.trim();
+    const params = { page: pg, size: PAGE_SIZE };
+    if (filtroEsp !== "Todas") params.especialidade = filtroEsp;
+    if (filtroCidade.trim())   params.cidade        = filtroCidade.trim();
 
-    Promise.all([
-      api.get("/api/servicos/publicados", { params }),
-      api.get(`/api/candidaturas/profissional/${user.id}`).catch(() => ({ data: [] })),
-    ])
-      .then(([resServicos, resCandidaturas]) => {
-        setServicos(resServicos.data ?? []);
-        const ids = new Set((resCandidaturas.data ?? []).map(c => c.servicoId));
-        setCandidatados(ids);
-      })
-      .catch(() => showToast("Erro ao carregar serviços.", "erro"))
-      .finally(() => setCarregando(false));
+    try {
+      const [resServicos, resCands] = await Promise.all([
+        api.get("/api/servicos/publicados", { params }),
+        api.get(`/api/candidaturas/profissional/${user.id}`).catch(() => ({ data: [] })),
+      ]);
+
+      const { content, page, totalPages, last } = resServicos.data;
+      setServicos(prev => resetar ? (content ?? []) : [...prev, ...(content ?? [])]);
+      setPaginacao({ page, totalPages, last });
+      setCandidatados(new Set((resCands.data ?? []).map(c => c.servicoId)));
+    } catch {
+      showToast("Erro ao carregar serviços.", "erro");
+    } finally {
+      setCarregando(false);
+    }
   }, [user?.id, filtroEsp, filtroCidade]);
+
+  // Recarrega do zero ao mudar filtros
+  useEffect(() => {
+    setPagina(0);
+    carregarServicos(0, true);
+  }, [filtroEsp, filtroCidade]);
 
   async function handleCandidatar(servico) {
     if (enviando || candidatados.has(servico.id)) return;
     setEnviando(servico.id);
-
     try {
       await api.post("/api/candidaturas", {
         servicoId:      servico.id,
         profissionalId: user.id,
       });
       setCandidatados(prev => new Set([...prev, servico.id]));
-      showToast("Candidatura enviada com sucesso!", "sucesso");
+      showToast("Candidatura enviada!", "sucesso");
     } catch (err) {
-      const msg = err.response?.data?.message ?? "Não foi possível enviar a candidatura.";
-      showToast(msg, "erro");
+      showToast(err.response?.data?.message ?? "Erro ao enviar candidatura.", "erro");
     } finally {
       setEnviando(null);
     }
   }
 
-  function handleChat(servico) {
-    navigate(`/chat/${servico.id}/${user.id}`);
+  function handleCarregarMais() {
+    const proxima = pagina + 1;
+    setPagina(proxima);
+    carregarServicos(proxima, false);
   }
-
-  const servicosFiltrados = servicos.filter(s => {
-    if (filtroEsp !== "Todas" && !s.especialidade?.toLowerCase().includes(filtroEsp.toLowerCase())) {
-      return false;
-    }
-    if (filtroCidade.trim() && !s.cidade?.toLowerCase().includes(filtroCidade.toLowerCase())) {
-      return false;
-    }
-    return true;
-  });
 
   return (
     <PageLayout title="Serviços disponíveis" subtitle="Encontre oportunidades na sua área">
@@ -153,82 +155,91 @@ export default function HomeProfissional() {
       </div>
 
       {/* Lista */}
-      {carregando ? (
+      {carregando && pagina === 0 ? (
         <div className="wm-empty-state">Carregando serviços...</div>
-      ) : servicosFiltrados.length === 0 ? (
-        <div className="wm-empty-state">
-          Nenhum serviço encontrado com esses filtros.
-        </div>
+      ) : servicos.length === 0 ? (
+        <div className="wm-empty-state">Nenhum serviço encontrado com esses filtros.</div>
       ) : (
-        <div className="wm-card-grid">
-          {servicosFiltrados.map(servico => {
-            const jaCandidatou = candidatados.has(servico.id);
-            const emEnvio      = enviando === servico.id;
-            const podeCandidatar = servico.status === "PUBLICADO" && !jaCandidatou;
-            const podeChat       = ["NEGOCIANDO","CONTRATADO","ANDAMENTO"].includes(servico.status)
-                                   && servico.profissionalId === user.id;
+        <>
+          <div className="wm-card-grid">
+            {servicos.map(servico => {
+              const jaCandidatou  = candidatados.has(servico.id);
+              const emEnvio       = enviando === servico.id;
+              const podeCandidatar = servico.status === "PUBLICADO" && !jaCandidatou;
+              const podeChat       = ["NEGOCIANDO","CONTRATADO","ANDAMENTO"].includes(servico.status)
+                                     && servico.profissionalId === user.id;
 
-            return (
-              <Card key={servico.id}>
-                <div className="wm-service-card">
-                  <div className="wm-service-card__header">
-                    <h3 className="wm-service-card__title">{servico.titulo}</h3>
-                    <span className={`wm-badge ${STATUS_CLASS[servico.status] ?? "wm-badge--gray"}`}>
-                      {STATUS_LABEL[servico.status] ?? servico.status}
-                    </span>
-                  </div>
+              return (
+                <Card key={servico.id}>
+                  <div className="wm-service-card">
+                    <div className="wm-service-card__header">
+                      <h3 className="wm-service-card__title">{servico.titulo}</h3>
+                      <span className={`wm-badge ${STATUS_CLASS[servico.status] ?? "wm-badge--gray"}`}>
+                        {STATUS_LABEL[servico.status] ?? servico.status}
+                      </span>
+                    </div>
 
-                  <div className="wm-service-card__meta">
-                    <span className="wm-service-card__meta-item">
-                      <IconBriefcase /> {servico.especialidade}
-                    </span>
-                    {servico.cidade && (
+                    <div className="wm-service-card__meta">
                       <span className="wm-service-card__meta-item">
-                        <IconMapPin /> {servico.cidade}{servico.estado ? ` — ${servico.estado}` : ""}
+                        <IconBriefcase /> {servico.especialidade}
                       </span>
+                      {servico.cidade && (
+                        <span className="wm-service-card__meta-item">
+                          <IconMapPin /> {servico.cidade}{servico.estado ? ` — ${servico.estado}` : ""}
+                        </span>
+                      )}
+                    </div>
+
+                    {servico.descricao && (
+                      <p className="wm-service-card__desc">
+                        {servico.descricao.length > 140
+                          ? servico.descricao.slice(0, 140) + "..."
+                          : servico.descricao}
+                      </p>
                     )}
+
+                    <div className="wm-service-card__actions">
+                      {podeCandidatar && (
+                        <Btn size="sm" onClick={() => handleCandidatar(servico)} disabled={emEnvio}>
+                          {emEnvio ? "Enviando..." : "Candidatar-se"}
+                        </Btn>
+                      )}
+                      {jaCandidatou && servico.status === "PUBLICADO" && (
+                        <span className="wm-text-muted" style={{ fontSize: 14 }}>
+                          ✓ Candidatura enviada
+                        </span>
+                      )}
+                      {podeChat && (
+                        <Btn
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/chat/${servico.id}/${user.id}`)}
+                        >
+                          <IconMessageCircle /> Chat
+                        </Btn>
+                      )}
+                    </div>
                   </div>
+                </Card>
+              );
+            })}
+          </div>
 
-                  {servico.descricao && (
-                    <p className="wm-service-card__desc">
-                      {servico.descricao.length > 140
-                        ? servico.descricao.slice(0, 140) + "..."
-                        : servico.descricao}
-                    </p>
-                  )}
+          {/* Carregar mais */}
+          {!paginacao.last && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+              <Btn variant="outline" onClick={handleCarregarMais} disabled={carregando}>
+                {carregando ? "Carregando..." : "Carregar mais"}
+              </Btn>
+            </div>
+          )}
 
-                  <div className="wm-service-card__actions">
-                    {podeCandidatar && (
-                      <Btn
-                        size="sm"
-                        onClick={() => handleCandidatar(servico)}
-                        disabled={emEnvio}
-                      >
-                        {emEnvio ? "Enviando..." : "Candidatar-se"}
-                      </Btn>
-                    )}
-
-                    {jaCandidatou && servico.status === "PUBLICADO" && (
-                      <span className="wm-text-muted" style={{ fontSize: 14 }}>
-                        ✓ Candidatura enviada
-                      </span>
-                    )}
-
-                    {podeChat && (
-                      <Btn
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleChat(servico)}
-                      >
-                        <IconMessageCircle /> Chat
-                      </Btn>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+          {paginacao.last && servicos.length > 0 && (
+            <p className="wm-text-muted" style={{ textAlign: "center", marginTop: 16, fontSize: 13 }}>
+              {servicos.length} serviço{servicos.length !== 1 ? "s" : ""} no total
+            </p>
+          )}
+        </>
       )}
     </PageLayout>
   );

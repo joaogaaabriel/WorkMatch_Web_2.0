@@ -2,6 +2,7 @@ package com.workmatch.service;
 
 import com.workmatch.dto.ServicoDTO;
 import com.workmatch.dto.response.CandidatureResponse;
+import com.workmatch.dto.response.PageResponse;
 import com.workmatch.dto.response.ServicoResponse;
 import com.workmatch.model.Profissional;
 import com.workmatch.model.Servico;
@@ -11,6 +12,10 @@ import com.workmatch.repository.CandidatureRepository;
 import com.workmatch.repository.ProfissionalRepository;
 import com.workmatch.repository.ServicoRepository;
 import com.workmatch.repository.UsuarioRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,14 +48,15 @@ public class ServicoService {
     @Transactional
     public ServicoResponse criar(ServicoDTO dto) {
         Usuario cliente = usuarioRepository.findById(dto.clienteId())
-                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Cliente não encontrado"));
 
         Servico servico = new Servico();
         servico.setTitulo(dto.titulo());
         servico.setEspecialidade(dto.especialidade());
         servico.setDescricao(dto.descricao());
-        servico.setCidade(dto.cidade());   // B08 corrigido
-        servico.setEstado(dto.estado());   // B08 corrigido
+        servico.setCidade(dto.cidade());
+        servico.setEstado(dto.estado());
         servico.setCliente(cliente);
         servico.setStatus(StatusServico.PUBLICADO);
 
@@ -75,25 +81,39 @@ public class ServicoService {
         return servicos.stream().map(mapper::toResponse).toList();
     }
 
-    // D14 corrigido — agora filtra por especialidade E cidade quando ambos fornecidos
-    public List<ServicoResponse> listarPublicados(String especialidade, String cidade) {
-        List<Servico> servicos;
+    /*
+     * Lista serviços publicados com paginação.
+     * page  — índice base 0 (default 0)
+     * size  — itens por página (default 20, máximo 50)
+     * Ordenação: mais recentes primeiro.
+     */
+    public PageResponse<ServicoResponse> listarPublicados(String especialidade,
+                                                           String cidade,
+                                                           int page,
+                                                           int size) {
+        int safeSize = Math.min(size, 50);
+        Pageable pageable = PageRequest.of(page, safeSize,
+                Sort.by(Sort.Direction.DESC, "dataCriacao"));
+
+        Page<Servico> resultado;
 
         if (especialidade != null && cidade != null) {
-            servicos = servicoRepository
+            resultado = servicoRepository
                     .findByEspecialidadeContainingIgnoreCaseAndCidadeContainingIgnoreCaseAndStatus(
-                            especialidade, cidade, StatusServico.PUBLICADO);
+                            especialidade, cidade, StatusServico.PUBLICADO, pageable);
         } else if (especialidade != null) {
-            servicos = servicoRepository
-                    .findByEspecialidadeContainingIgnoreCaseAndStatus(especialidade, StatusServico.PUBLICADO);
+            resultado = servicoRepository
+                    .findByEspecialidadeContainingIgnoreCaseAndStatus(
+                            especialidade, StatusServico.PUBLICADO, pageable);
         } else if (cidade != null) {
-            servicos = servicoRepository
-                    .findByCidadeContainingIgnoreCaseAndStatus(cidade, StatusServico.PUBLICADO);
+            resultado = servicoRepository
+                    .findByCidadeContainingIgnoreCaseAndStatus(
+                            cidade, StatusServico.PUBLICADO, pageable);
         } else {
-            servicos = servicoRepository.findByStatus(StatusServico.PUBLICADO);
+            resultado = servicoRepository.findByStatus(StatusServico.PUBLICADO, pageable);
         }
 
-        return servicos.stream().map(mapper::toResponse).toList();
+        return PageResponse.of(resultado.map(mapper::toResponse));
     }
 
     @Transactional
@@ -103,7 +123,8 @@ public class ServicoService {
 
         if (proximo == StatusServico.NEGOCIANDO || proximo == StatusServico.CONTRATADO) {
             Profissional profissional = profissionalRepository.findById(profissionalId)
-                    .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Profissional não encontrado"));
             servico.setProfissional(profissional);
         }
 
@@ -126,7 +147,8 @@ public class ServicoService {
     public void cancelar(UUID id) {
         Servico servico = buscarEntidade(id);
         if (servico.getStatus() == StatusServico.FINALIZADO) {
-            throw new IllegalStateException("Serviço finalizado não pode ser cancelado");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Serviço finalizado não pode ser cancelado");
         }
         servicoRepository.deleteById(id);
     }
@@ -147,7 +169,8 @@ public class ServicoService {
 
     private Servico buscarEntidade(UUID id) {
         return servicoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Serviço não encontrado"));
     }
 
     private StatusServico proximoStatus(StatusServico atual) {
@@ -156,7 +179,8 @@ public class ServicoService {
             case NEGOCIANDO -> StatusServico.CONTRATADO;
             case CONTRATADO -> StatusServico.ANDAMENTO;
             case ANDAMENTO  -> StatusServico.FINALIZADO;
-            case FINALIZADO -> throw new IllegalStateException("Serviço já finalizado");
+            case FINALIZADO -> throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Serviço já finalizado");
             case ARQUIVADO  -> throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Serviço arquivado não pode ter status avançado");
         };
