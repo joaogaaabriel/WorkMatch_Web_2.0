@@ -1,12 +1,15 @@
 package com.workmatch.service;
 
-import com.workmatch.dto.ProfissionalDTO;
+import com.workmatch.dto.UsuarioDTO;
+import com.workmatch.keycloak.KeycloakIntegrationException;
 import com.workmatch.keycloak.KeycloakRegistrationService;
 import com.workmatch.model.Profissional;
 import com.workmatch.repository.ProfissionalRepository;
-
+import com.workmatch.repository.UsuarioRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,101 +17,127 @@ import java.util.UUID;
 @Service
 public class ProfissionalService {
 
-    private final ProfissionalRepository repository;
-    private final KeycloakRegistrationService keycloakRegistrationService;
+    private final ProfissionalRepository profissionalRepo;
+    private final UsuarioRepository      usuarioRepo;
+    private final KeycloakRegistrationService keycloakRegistration;
 
-    public ProfissionalService(ProfissionalRepository repository,
-                               KeycloakRegistrationService keycloakRegistrationService) {
-        this.repository = repository;
-        this.keycloakRegistrationService = keycloakRegistrationService;
+    public ProfissionalService(ProfissionalRepository profissionalRepo,
+                               UsuarioRepository usuarioRepo,
+                               KeycloakRegistrationService keycloakRegistration) {
+        this.profissionalRepo  = profissionalRepo;
+        this.usuarioRepo       = usuarioRepo;
+        this.keycloakRegistration = keycloakRegistration;
     }
 
-    @Transactional
-    public Profissional cadastrar(ProfissionalDTO dto) {
-        validarDuplicatas(dto);
+    // ── Cadastro ──────────────────────────────────────────────────────────────
 
-        String keycloakId = keycloakRegistrationService.register(
-                dto.login(), dto.email(), dto.nome(), dto.senha(), "PROFISSIONAL"
-        );
+    @Transactional
+    public Profissional cadastrar(UsuarioDTO dto) {
+        String cpf      = limpar(dto.getCpf());
+        String telefone = limpar(dto.getTelefone());
+        dto.setCpf(cpf);
+        dto.setTelefone(telefone);
+
+        validarUnicidade(dto);
+
+        String keycloakId;
+        try {
+            keycloakId = keycloakRegistration.register(
+                    dto.getLogin(), dto.getEmail(), dto.getNome(), dto.getSenha(), "PROFISSIONAL"
+            );
+        } catch (KeycloakIntegrationException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+                    "Falha ao registrar no Keycloak: " + e.getMessage());
+        }
 
         try {
-            Profissional profissional = toEntity(dto);
-            profissional.setKeycloakId(keycloakId);
-            return repository.save(profissional);
-        } catch (Exception ex) {
-            keycloakRegistrationService.rollback(keycloakId);
-            throw ex;
+            Profissional p = new Profissional();
+            p.setKeycloakId(keycloakId);
+            p.setNome(dto.getNome());
+            p.setCpf(cpf);
+            p.setEmail(dto.getEmail());
+            p.setTelefone(telefone);
+            p.setDataNascimento(dto.getDataNascimento());
+            p.setEndereco(dto.getEndereco());
+            p.setCidade(dto.getCidade());
+            p.setEstado(dto.getEstado());
+            p.setLogin(dto.getLogin());
+            p.setSenha("[KEYCLOAK]");   // B04 — nunca persistir senha real
+            p.setRole("PROFISSIONAL");
+            p.setEspecialidade(dto.getEspecialidade());
+            p.setDescricao(dto.getDescricao());
+            p.setExperienciaAnos(dto.getExperienciaAnos());
+            p.setAtivo(true);
+            return profissionalRepo.save(p);
+        } catch (Exception e) {
+            keycloakRegistration.rollback(keycloakId);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Falha ao salvar no banco de dados: " + e.getMessage());
         }
     }
 
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+
     public Profissional buscarPorId(UUID id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Profissional não encontrado"));
+        return profissionalRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Profissional não encontrado"));
     }
 
     public List<Profissional> listar(String especialidade, String cidade) {
         if (especialidade != null && cidade != null) {
-            return repository.findByEspecialidadeContainingIgnoreCaseAndCidadeContainingIgnoreCase(especialidade, cidade);
+            return profissionalRepo.findByEspecialidadeContainingIgnoreCaseAndCidadeContainingIgnoreCase(
+                    especialidade, cidade);
         }
         if (especialidade != null) {
-            return repository.findByEspecialidadeContainingIgnoreCase(especialidade);
+            return profissionalRepo.findByEspecialidadeContainingIgnoreCase(especialidade);
         }
         if (cidade != null) {
-            return repository.findByCidadeContainingIgnoreCase(cidade);
+            return profissionalRepo.findByCidadeContainingIgnoreCase(cidade);
         }
-        return repository.findAll();
+        return profissionalRepo.findAll();
     }
 
     @Transactional
-    public Profissional actualizer(UUID id, ProfissionalDTO dto) {
-        Profissional profissional = buscarPorId(id);
-        profissional.setNome(dto.nome());
-        profissional.setEmail(dto.email());
-        profissional.setTelefone(dto.telefone());
-        profissional.setDataNascimento(dto.dataNascimento());
-        profissional.setEndereco(dto.endereco());
-        profissional.setCidade(dto.cidade());
-        profissional.setEstado(dto.estado());
-        profissional.setEspecialidade(dto.especialidade());
-        profissional.setDescricao(dto.descricao());
-        profissional.setExperienciaAnos(dto.experienciaAnos());
-        return repository.save(profissional);
+    public Profissional atualizar(UUID id, UsuarioDTO dto) {
+        Profissional p = buscarPorId(id);
+        p.setNome(dto.getNome());
+        p.setEmail(dto.getEmail());
+        p.setTelefone(limpar(dto.getTelefone()));
+        p.setDataNascimento(dto.getDataNascimento());
+        p.setEndereco(dto.getEndereco());
+        p.setCidade(dto.getCidade());
+        p.setEstado(dto.getEstado());
+        p.setEspecialidade(dto.getEspecialidade());
+        p.setDescricao(dto.getDescricao());
+        p.setExperienciaAnos(dto.getExperienciaAnos());
+        return profissionalRepo.save(p);
     }
 
     @Transactional
-    public void deletable(UUID id) {
-        Profissional profissional = buscarPorId(id);
-        keycloakRegistrationService.rollback(profissional.getKeycloakId());
-        repository.deleteById(id);
+    public void deletar(UUID id) {
+        Profissional p = buscarPorId(id);
+        if (p.getKeycloakId() != null) {
+            keycloakRegistration.rollback(p.getKeycloakId());
+        }
+        profissionalRepo.deleteById(id);
     }
 
-    private void validarDuplicatas(ProfissionalDTO dto) {
-        if (repository.existsByCpf(dto.cpf())) {
-            throw new IllegalArgumentException("CPF já cadastrado");
-        }
-        if (repository.existsByEmail(dto.email())) {
-            throw new IllegalArgumentException("E-mail já cadastrado");
-        }
-        if (repository.existsByLogin(dto.login())) {
-            throw new IllegalArgumentException("Login já está em uso");
-        }
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void validarUnicidade(UsuarioDTO dto) {
+        if (profissionalRepo.existsByCpf(dto.getCpf()) || usuarioRepo.existsByCpf(dto.getCpf()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF já cadastrado");
+
+        if (profissionalRepo.existsByEmail(dto.getEmail()) || usuarioRepo.existsByEmail(dto.getEmail()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "E-mail já cadastrado");
+
+        if (profissionalRepo.existsByLogin(dto.getLogin()) || usuarioRepo.existsByLogin(dto.getLogin()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Login já em uso");
     }
 
-    private Profissional toEntity(ProfissionalDTO dto) {
-        Profissional profissional = new Profissional();
-        profissional.setNome(dto.nome());
-        profissional.setCpf(dto.cpf());
-        profissional.setEmail(dto.email());
-        profissional.setTelefone(dto.telefone());
-        profissional.setDataNascimento(dto.dataNascimento());
-        profissional.setEndereco(dto.endereco());
-        profissional.setCidade(dto.cidade());
-        profissional.setEstado(dto.estado());
-        profissional.setEspecialidade(dto.especialidade());
-        profissional.setDescricao(dto.descricao());
-        profissional.setExperienciaAnos(dto.experienciaAnos());
-        profissional.setLogin(dto.login());
-        profissional.setSenha(dto.senha());
-        return profissional;
+    private String limpar(String valor) {
+        if (valor == null) return null;
+        return valor.replaceAll("\\D", "");
     }
 }

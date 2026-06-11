@@ -1,221 +1,152 @@
-/**
- * WorkMatch 2.0 — ConfiguracaoPerfilPage
- *
- * CORREÇÕES:
- * - Usa /auth/introspect para obter userId, depois GET /api/usuarios/{id}
- * - Atualização via PUT /api/usuarios/{id} com campos que o backend aceita
- * - Seção de senha desabilitada (backend não tem endpoint dedicado)
- */
-import React, { useEffect, useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
-import { usuariosService } from "../services/api";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 import PageLayout from "../components/PageLayout";
-import { Btn, Card, CardHeader, CardBody, CardTitle, Input, Divider, Alert, Badge } from "../components/ui";
-import Toast from "../components/Toast";
+import { Card, Input, Btn } from "../components/ui";
 import { useToast } from "../hooks/useToast";
 
-function fmtCpf(v) {
-  if (!v) return "";
-  v = v.replace(/\D/g, "");
-  return v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, (_, a, b, c, d) =>
-    d ? `${a}.${b}.${c}-${d}` : c ? `${a}.${b}.${c}` : b ? `${a}.${b}` : a
-  );
-}
+const ESTADOS_BR = [
+  "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
+  "MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN",
+  "RS","RO","RR","SC","SP","SE","TO",
+];
 
 export default function ConfiguracaoPerfilPage() {
-  const navigate = useNavigate();
-  const { user } = useContext(AuthContext);
-  const { toast, showToast, hideToast } = useToast();
+  const { user, setUser } = useAuth();
+  const { showToast, Toast } = useToast();
 
-  const [perfil, setPerfil] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [formPerfil, setFormPerfil] = useState({ nome: "", email: "", telefone: "", endereco: "" });
-  const [salvandoPerfil, setSalvandoPerfil] = useState(false);
+  const [form, setForm] = useState({
+    nome:     "",
+    email:    "",
+    telefone: "",
+    endereco: "",
+    cidade:   "",
+    estado:   "",
+  });
+  const [carregando, setCarregando] = useState(true);
+  const [salvando,   setSalvando]   = useState(false);
 
   useEffect(() => {
-    if (!user?.token) { navigate("/login"); return; }
+    if (!user?.id) return;
 
-    const token = localStorage.getItem("token");
-    if (!token) { navigate("/login"); return; }
-
-    // 1) Introspect para pegar userId
-    apiAuth.post("/auth/introspect", { token })
-      .then(res => {
-        const { active, userId: uid } = res.data;
-        if (!active || !uid) { navigate("/login"); return; }
-        setUserId(uid);
-        // 2) Buscar dados do usuário
-        return apiBackend.get(`/api/usuarios/${uid}`);
-      })
-      .then(res => {
-        if (!res) return;
-        const data = res.data;
-        setPerfil(data);
-        setFormPerfil({
-          nome:     data.nome     || "",
-          email:    data.email    || "",
-          telefone: data.telefone || "",
-          endereco: data.endereco || "",
+    api.get(`/api/usuarios/${user.id}`)
+      .then(({ data }) => {
+        setForm({
+          nome:     data.nome     ?? "",
+          email:    data.email    ?? "",
+          telefone: data.telefone ?? "",
+          endereco: data.endereco ?? "",
+          cidade:   data.cidade   ?? "",
+          estado:   data.estado   ?? "",
         });
       })
-      .catch(err => {
-        console.error("Erro ao carregar perfil:", err);
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          navigate("/login");
-        } else {
-          showToast("Erro ao carregar dados do perfil.", "error");
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+      .catch(() => showToast("Não foi possível carregar o perfil.", "erro"))
+      .finally(() => setCarregando(false));
+  }, [user?.id]);
 
   function handleChange(e) {
-    setFormPerfil(p => ({ ...p, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   }
 
-  async function salvarPerfil(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (!userId) return;
-    setSalvandoPerfil(true);
+    setSalvando(true);
+
     try {
-      // O PUT /api/usuarios/{id} do backend aceita: nome, email, cpf
-      // Enviamos o que temos; cpf vem do perfil carregado (não editável)
-      await apiBackend.put(`/api/usuarios/${userId}`, {
-        nome:  formPerfil.nome,
-        email: formPerfil.email,
-        cpf:   perfil?.cpf || "",
-      });
-      showToast("Perfil atualizado com sucesso!", "success");
+      const { data } = await api.put(`/api/usuarios/${user.id}`, form);
+      if (data?.usuario?.nome) {
+        setUser(prev => ({ ...prev, nome: data.usuario.nome }));
+      }
+      showToast("Perfil atualizado com sucesso.", "sucesso");
     } catch (err) {
-      const msg = err.response?.data || "Erro ao atualizar perfil.";
-      showToast(typeof msg === "string" ? msg : "Erro ao atualizar perfil.", "error");
+      const msg = err.response?.data?.message ?? "Erro ao salvar. Tente novamente.";
+      showToast(msg, "erro");
     } finally {
-      setSalvandoPerfil(false);
+      setSalvando(false);
     }
   }
 
-  const initials = formPerfil.nome
-    ? formPerfil.nome.trim().split(" ").filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase()
-    : "U";
+  if (carregando) {
+    return (
+      <PageLayout title="Meu Perfil">
+        <div className="wm-empty-state">Carregando perfil...</div>
+      </PageLayout>
+    );
+  }
 
   return (
-    <PageLayout title="Meu Perfil" subtitle="Gerencie seus dados pessoais" backPath="/home">
+    <PageLayout title="Meu Perfil" subtitle="Atualize suas informações pessoais">
+      <Toast />
 
-      {loading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "var(--sp-16) 0" }}>
-          <div className="wm-spinner wm-spinner--lg" />
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "var(--sp-6)", alignItems: "start" }}>
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <div className="wm-form-grid">
+            <Input
+              label="Nome completo"
+              name="nome"
+              value={form.nome}
+              onChange={handleChange}
+              required
+              autoComplete="name"
+            />
+            <Input
+              label="E-mail"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
+            />
+            <Input
+              label="Telefone"
+              name="telefone"
+              type="tel"
+              value={form.telefone}
+              onChange={handleChange}
+              placeholder="(XX) XXXXX-XXXX"
+              autoComplete="tel"
+            />
+            <Input
+              label="Endereço"
+              name="endereco"
+              value={form.endereco}
+              onChange={handleChange}
+              placeholder="Rua, número, bairro"
+              autoComplete="street-address"
+            />
+            <Input
+              label="Cidade"
+              name="cidade"
+              value={form.cidade}
+              onChange={handleChange}
+              autoComplete="address-level2"
+            />
 
-          {/* Card perfil */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
-
-            {/* Avatar + info */}
-            <Card accent="purple">
-              <CardBody>
-                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-5)" }}>
-                  <div className="wm-avatar wm-avatar--xl wm-avatar--purple" style={{ flexShrink: 0 }}>
-                    {initials}
-                  </div>
-                  <div>
-                    <p style={{ fontWeight: 700, fontSize: 18, color: "var(--clr-navy)", marginBottom: 4 }}>
-                      {formPerfil.nome || "—"}
-                    </p>
-                    <p style={{ color: "var(--clr-text-light)", fontSize: 14, marginBottom: 8 }}>
-                      {formPerfil.email}
-                    </p>
-                    <Badge variant={user?.role === "ADMIN" ? "blue" : "purple"}>
-                      {user?.role === "ADMIN" ? "👑 Administrador" : "👤 Cliente"}
-                    </Badge>
-                  </div>
-                </div>
-
-                {perfil?.dataCadastro && (
-                  <div style={{ marginTop: "var(--sp-5)", padding: "var(--sp-3) var(--sp-4)", background: "var(--clr-bg)", borderRadius: "var(--r-md)", display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-                    <span style={{ fontSize: 16 }}>📅</span>
-                    <span style={{ fontSize: 13, color: "var(--clr-text-light)" }}>
-                      Membro desde{" "}
-                      {new Date(perfil.dataCadastro).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-                    </span>
-                  </div>
-                )}
-              </CardBody>
-            </Card>
-
-            {/* CPF (somente leitura) */}
-            {perfil?.cpf && (
-              <Card>
-                <CardBody>
-                  <p style={{ fontSize: 12, color: "var(--clr-text-light)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: "var(--sp-2)" }}>
-                    CPF cadastrado
-                  </p>
-                  <p style={{ fontWeight: 700, color: "var(--clr-navy)", letterSpacing: "0.04em", fontSize: 16 }}>
-                    {fmtCpf(perfil.cpf)}
-                  </p>
-                  <p style={{ fontSize: 12, color: "var(--clr-text-light)", marginTop: "var(--sp-1)" }}>
-                    O CPF não pode ser alterado.
-                  </p>
-                </CardBody>
-              </Card>
-            )}
+            <div className="wm-form-group">
+              <label className="wm-label">Estado</label>
+              <select
+                name="estado"
+                value={form.estado}
+                onChange={handleChange}
+                className="wm-input"
+              >
+                <option value="">Selecione</option>
+                {ESTADOS_BR.map(uf => (
+                  <option key={uf} value={uf}>{uf}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Editar dados */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-5)" }}>
-            <Card>
-              <CardHeader><CardTitle>✏️ Editar dados</CardTitle></CardHeader>
-              <form onSubmit={salvarPerfil}>
-                <CardBody style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-                  <Input
-                    label="Nome completo" name="nome" value={formPerfil.nome}
-                    onChange={handleChange} placeholder="Seu nome completo"
-                    icon="👤" required
-                  />
-                  <Input
-                    label="E-mail" name="email" value={formPerfil.email}
-                    onChange={handleChange} placeholder="seuemail@email.com"
-                    icon="✉️" type="email"
-                    hint="Alterar o e-mail pode afetar seu próximo login."
-                  />
-
-                  <Alert variant="info" emoji="ℹ️">
-                    Telefone e endereço são informações complementares armazenadas localmente.
-                  </Alert>
-
-                  <div className="wm-form-actions">
-                    <Btn type="submit" loading={salvandoPerfil}>Salvar alterações</Btn>
-                  </div>
-                </CardBody>
-              </form>
-            </Card>
-
-            {/* Seção senha — informativa, backend sem endpoint */}
-            <Card accent="blue">
-              <CardHeader><CardTitle>🔒 Segurança</CardTitle></CardHeader>
-              <CardBody>
-                <Alert variant="warning" emoji="⚠️">
-                  A alteração de senha não está disponível nesta versão. Entre em contato com o suporte para solicitar a redefinição.
-                </Alert>
-                <div style={{ marginTop: "var(--sp-4)" }}>
-                  <Btn
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => navigate("/suporte")}
-                  >
-                    💬 Ir para o Suporte
-                  </Btn>
-                </div>
-              </CardBody>
-            </Card>
+          <div className="wm-form-actions">
+            <Btn type="submit" disabled={salvando}>
+              {salvando ? "Salvando..." : "Salvar alterações"}
+            </Btn>
           </div>
-
-        </div>
-      )}
-
-      <Toast {...toast} onClose={hideToast} />
+        </Card>
+      </form>
     </PageLayout>
   );
 }
