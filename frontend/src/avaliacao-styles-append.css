@@ -1,0 +1,112 @@
+/* =========================================================
+   MODAL GENÉRICO — WorkMatch
+   Adicionar ao final do styles.css existente
+========================================================= */
+
+.wm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.wm-modal {
+  background: var(--wm-color-surface, #fff);
+  border-radius: var(--wm-radius-lg, 12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.wm-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--wm-color-border, #e5e7eb);
+}
+
+.wm-modal__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--wm-color-text-primary, #111827);
+  margin: 0;
+}
+
+.wm-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--wm-color-text-secondary, #6b7280);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.wm-modal__close:hover {
+  color: var(--wm-color-text-primary, #111827);
+}
+
+.wm-modal__body {
+  padding: 20px 24px 24px;
+}
+
+.wm-modal__service-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--wm-color-text-primary, #111827);
+  margin: 0 0 4px;
+}
+
+.wm-modal__prof-name {
+  font-size: 13px;
+  color: var(--wm-color-text-secondary, #6b7280);
+  margin: 0 0 16px;
+}
+
+.wm-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* =========================================================
+   AVALIAÇÃO POR ESTRELAS
+========================================================= */
+
+.wm-stars {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 4px;
+}
+
+.wm-stars__btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #d1d5db;
+  transition: color 0.1s, transform 0.1s;
+  line-height: 1;
+}
+
+.wm-stars__btn:hover,
+.wm-stars__btn--active {
+  color: #f59e0b;
+  transform: scale(1.1);
+}
+
+.wm-stars__label {
+  font-size: 13px;
+  color: var(--wm-color-text-secondary, #6b7280);
+  margin: 0 0 4px;
+  min-height: 18px;
+}

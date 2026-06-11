@@ -10,7 +10,9 @@ import com.workmatch.model.Usuario;
 import com.workmatch.repository.CandidatureRepository;
 import com.workmatch.repository.ProfissionalRepository;
 import com.workmatch.repository.ServicoRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,99 +20,74 @@ import java.util.UUID;
 @Service
 public class CandidatureService {
 
-    private final CandidatureRepository candidatureRepository;
-    private final ServicoRepository servicoRepository;
+    private final CandidatureRepository  candidatureRepository;
+    private final ServicoRepository      servicoRepository;
     private final ProfissionalRepository profissionalRepository;
-    private final MenssengerService menssengerService;
+    private final MenssengerService      menssengerService;
 
-    public CandidatureService(
-            CandidatureRepository candidatureRepository,
-            ServicoRepository servicoRepository,
-            ProfissionalRepository profissionalRepository,
-            MenssengerService menssengerService
-    ) {
-        this.candidatureRepository = candidatureRepository;
-        this.servicoRepository = servicoRepository;
+    public CandidatureService(CandidatureRepository candidatureRepository,
+                               ServicoRepository servicoRepository,
+                               ProfissionalRepository profissionalRepository,
+                               MenssengerService menssengerService) {
+        this.candidatureRepository  = candidatureRepository;
+        this.servicoRepository      = servicoRepository;
         this.profissionalRepository = profissionalRepository;
-        this.menssengerService = menssengerService;
+        this.menssengerService      = menssengerService;
     }
 
     public CandidatureResponse criar(CandidatureDTO dto) {
-
         if (candidatureRepository.existsByServicoIdAndProfissionalId(
-                dto.getServicoId(),
-                dto.getProfissionalId()
-        )) {
-            throw new RuntimeException(
-                    "Você já se candidatou para este serviço."
-            );
+                dto.getServicoId(), dto.getProfissionalId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Você já se candidatou para este serviço.");
         }
 
         Servico servico = servicoRepository.findById(dto.getServicoId())
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Serviço não encontrado: " + dto.getServicoId()
-                        )
-                );
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Serviço não encontrado"));
 
-        Profissional profissional = profissionalRepository.findById(
-                        dto.getProfissionalId()
-                )
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Profissional não encontrado: " + dto.getProfissionalId()
-                        )
-                );
+        Profissional profissional = profissionalRepository.findById(dto.getProfissionalId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Profissional não encontrado"));
 
         Candidature candidatura = new Candidature();
-
         candidatura.setServico(servico);
         candidatura.setProfissional(profissional);
-
         candidatura = candidatureRepository.save(candidatura);
 
-        MenssengerDTO mensagem = new MenssengerDTO();
+        // Mensagem automática de apresentação
+        MenssengerDTO msg = new MenssengerDTO();
+        msg.setServicoId(servico.getId());
+        msg.setRemetenteId(profissional.getId());
+        msg.setRemetenteTipo("PROFISSIONAL");
+        msg.setDestinatarioId(servico.getCliente().getId());
+        msg.setConteudo("Olá! Me candidatei para este serviço e estou disponível para conversar.");
+        menssengerService.enviar(msg);
 
-        mensagem.setServicoId(servico.getId());
-        mensagem.setRemetenteId(profissional.getId());
-
-        Usuario cliente = servico.getCliente();
-
-        mensagem.setDestinatarioId(cliente.getId());
-
-        mensagem.setConteudo(
-                "Olá, me candidatei para este serviço e estou disponível para conversar."
-        );
-
-        menssengerService.enviar(mensagem);
-
-        return new CandidatureResponse(
-                candidatura.getId(),
-                servico.getId(),
-                profissional.getId(),
-                profissional.getNome(),
-                profissional.getEspecialidade(),
-                profissional.getCidade(),
-                profissional.getEstado(),
-                candidatura.getCriadoEm()
-        );
+        return toResponse(candidatura);
     }
 
     public List<CandidatureResponse> listarPorServico(UUID servicoId) {
+        return candidatureRepository.findByServicoId(servicoId)
+                .stream().map(this::toResponse).toList();
+    }
 
-        return candidatureRepository
-                .findByServicoId(servicoId)
-                .stream()
-                .map(c -> new CandidatureResponse(
-                        c.getId(),
-                        c.getServico().getId(),
-                        c.getProfissional().getId(),
-                        c.getProfissional().getNome(),
-                        c.getProfissional().getEspecialidade(),
-                        c.getProfissional().getCidade(),
-                        c.getProfissional().getEstado(),
-                        c.getCriadoEm()
-                ))
-                .toList();
+    // Novo — usado pelo HomeProfissional para saber onde já se candidatou
+    public List<CandidatureResponse> listarPorProfissional(UUID profissionalId) {
+        return candidatureRepository.findByProfissionalId(profissionalId)
+                .stream().map(this::toResponse).toList();
+    }
+
+    private CandidatureResponse toResponse(Candidature c) {
+        return new CandidatureResponse(
+                c.getId(),
+                c.getServico().getId(),
+                c.getProfissional().getId(),
+                c.getProfissional().getNome(),
+                c.getProfissional().getEspecialidade(),
+                c.getProfissional().getCidade(),
+                c.getProfissional().getEstado(),
+                c.getCriadoEm()
+        );
     }
 }

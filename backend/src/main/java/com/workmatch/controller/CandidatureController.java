@@ -21,20 +21,19 @@ public class CandidatureController {
     }
 
     @PostMapping
-    public ResponseEntity<CandidatureResponse> criar(
-            @RequestBody CandidatureDTO dto
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(service.criar(dto));
+    public ResponseEntity<CandidatureResponse> criar(@RequestBody CandidatureDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
     }
 
     @GetMapping("/servico/{servicoId}")
-    public ResponseEntity<List<CandidatureResponse>> listar(
-            @PathVariable UUID servicoId
-    ) {
-        return ResponseEntity.ok(
-                service.listarPorServico(servicoId)
-        );
+    public ResponseEntity<List<CandidatureResponse>> listarPorServico(@PathVariable UUID servicoId) {
+        return ResponseEntity.ok(service.listarPorServico(servicoId));
+    }
+
+    // Endpoint novo — HomeProfissional precisa saber em quais serviços já se candidatou
+    @GetMapping("/profissional/{profissionalId}")
+    public ResponseEntity<List<CandidatureResponse>> listarPorProfissional(
+            @PathVariable UUID profissionalId) {
+        return ResponseEntity.ok(service.listarPorProfissional(profissionalId));
     }
 }

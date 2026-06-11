@@ -1,359 +1,235 @@
-/**
- * WorkMatch — pages/HomeProfissional.jsx
- * CEL Design System v3.0
- *
- * Lógica 100% preservada:
- *  - carregarPublicacoes / handleCandidatar
- *  - URGENCIA_BADGE / fmtData
- *  - estados: publicacoes, loading, erro, candidatando
- *  - fetch nativo / API_URL
- *
- * Alterações visuais:
- *  - "Olá, {nome} 👷" → sem emoji
- *  - "📋 Meus serviços" / "👤 Meu perfil" → SVG + texto
- *  - emoji="🔍" EmptyState → icon SVG
- *  - Inline 📍 / 🕐 / 📌 / ✋ nos cards → SVG
- */
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
+import PageLayout from "../components/PageLayout";
+import { Card, Btn } from "../components/ui";
+import { useToast } from "../hooks/useToast";
 
-import React, { useEffect, useState } from "react";
-import { useNavigate }  from "react-router-dom";
-import { useAuth }      from "../context/AuthContext";
-import PageLayout       from "../components/PageLayout";
-import { Btn, Card, CardBody, Badge, Spinner, EmptyState } from "../components/ui";
+const ESPECIALIDADES = [
+  "Todas", "Eletricista", "Encanador", "Pintor", "Pedreiro",
+  "Marceneiro", "Jardineiro", "Diarista", "Técnico de TI", "Outro",
+];
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-/* =========================================================
-   CONSTANTES — preservadas
-========================================================= */
-
-const URGENCIA_BADGE = {
-  URGENTE: "danger",
-  ALTA:    "warning",
-  NORMAL:  "neutral",
-};
-
-/* =========================================================
-   HELPER — preservado
-========================================================= */
-
-function fmtData(data) {
-  if (!data) return "";
-  const d = new Date(data);
-  return d.toLocaleDateString("pt-BR", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
+function IconMapPin() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </svg>
+  );
 }
 
-/* =========================================================
-   ÍCONES SVG — inline, Lucide-style
-========================================================= */
+function IconBriefcase() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  );
+}
 
-const IcoClipboard = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>
-  </svg>
-);
+function IconMessageCircle() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      aria-hidden="true">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
 
-const IcoUser = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <circle cx="12" cy="8" r="4"/>
-    <path d="M20 21a8 8 0 1 0-16 0"/>
-  </svg>
-);
+const STATUS_LABEL = {
+  PUBLICADO:  "Publicado",
+  NEGOCIANDO: "Negociando",
+  CONTRATADO: "Contratado",
+  ANDAMENTO:  "Em andamento",
+  FINALIZADO: "Finalizado",
+  ARQUIVADO:  "Arquivado",
+};
 
-const IcoSearch = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <circle cx="11" cy="11" r="8"/>
-    <path d="m21 21-4.35-4.35"/>
-  </svg>
-);
-
-const IcoMapPin = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-    <circle cx="12" cy="10" r="3"/>
-  </svg>
-);
-
-const IcoClock = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
-
-const IcoTag = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
-    <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
-  </svg>
-);
-
-const IcoSend = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="m22 2-7 20-4-9-9-4Z"/>
-    <path d="M22 2 11 13"/>
-  </svg>
-);
-
-const IcoWrench = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-    aria-hidden="true">
-    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-  </svg>
-);
-
-/* =========================================================
-   COMPONENTE
-========================================================= */
+const STATUS_CLASS = {
+  PUBLICADO:  "wm-badge--blue",
+  NEGOCIANDO: "wm-badge--yellow",
+  CONTRATADO: "wm-badge--green",
+  ANDAMENTO:  "wm-badge--green",
+  FINALIZADO: "wm-badge--gray",
+  ARQUIVADO:  "wm-badge--gray",
+};
 
 export default function HomeProfissional() {
-  const navigate     = useNavigate();
-  const { user }     = useAuth();
-  const primeiroNome = user?.nome?.split(" ")[0] || "Profissional";
+  const { user }  = useAuth();
+  const navigate  = useNavigate();
+  const { showToast, Toast } = useToast();
 
-  const [publicacoes,  setPublicacoes]  = useState([]);
-  const [loading,      setLoading]      = useState(true);
-  const [erro,         setErro]         = useState("");
-  const [candidatando, setCandidatando] = useState(null);
+  const [servicos,       setServicos]       = useState([]);
+  const [candidatados,   setCandidatados]   = useState(new Set());
+  const [carregando,     setCarregando]     = useState(true);
+  const [enviando,       setEnviando]       = useState(null); // id do serviço em processo
+  const [filtroEsp,      setFiltroEsp]      = useState("Todas");
+  const [filtroCidade,   setFiltroCidade]   = useState("");
 
-  useEffect(() => { carregarPublicacoes(); }, []);
+  // Carrega serviços publicados e candidaturas já feitas
+  useEffect(() => {
+    if (!user?.id) return;
 
-  /* ── Lógica preservada integralmente ── */
+    const params = {};
+    if (filtroEsp && filtroEsp !== "Todas") params.especialidade = filtroEsp;
+    if (filtroCidade.trim())                params.cidade        = filtroCidade.trim();
 
-  async function carregarPublicacoes() {
+    Promise.all([
+      api.get("/api/servicos/publicados", { params }),
+      api.get(`/api/candidaturas/profissional/${user.id}`).catch(() => ({ data: [] })),
+    ])
+      .then(([resServicos, resCandidaturas]) => {
+        setServicos(resServicos.data ?? []);
+        const ids = new Set((resCandidaturas.data ?? []).map(c => c.servicoId));
+        setCandidatados(ids);
+      })
+      .catch(() => showToast("Erro ao carregar serviços.", "erro"))
+      .finally(() => setCarregando(false));
+  }, [user?.id, filtroEsp, filtroCidade]);
+
+  async function handleCandidatar(servico) {
+    if (enviando || candidatados.has(servico.id)) return;
+    setEnviando(servico.id);
+
     try {
-      setLoading(true); setErro("");
-      const response = await fetch(`${API_URL}/api/servicos/publicados`);
-      if (!response.ok) throw new Error("Erro ao buscar publicações");
-      const data = await response.json();
-      setPublicacoes(data);
-    } catch (error) {
-      console.error(error);
-      setErro("Não foi possível carregar os serviços.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCandidatar(servicoId) {
-    setCandidatando(servicoId);
-    try {
-      const response = await fetch(`${API_URL}/api/candidaturas`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ servicoId, profissionalId: user.id }),
+      await api.post("/api/candidaturas", {
+        servicoId:      servico.id,
+        profissionalId: user.id,
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Erro ao candidatar");
-      alert("Candidatura enviada!");
-      navigate(`/chat/${servicoId}`);
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
+      setCandidatados(prev => new Set([...prev, servico.id]));
+      showToast("Candidatura enviada com sucesso!", "sucesso");
+    } catch (err) {
+      const msg = err.response?.data?.message ?? "Não foi possível enviar a candidatura.";
+      showToast(msg, "erro");
     } finally {
-      setCandidatando(null);
+      setEnviando(null);
     }
   }
 
-  /* ── Estilo compartilhado de metadado (localização, data, etc.) ── */
-  const metaStyle = {
-    fontSize: 13, color: "var(--clr-text-light)",
-    display: "flex", alignItems: "center", gap: 5,
-  };
+  function handleChat(servico) {
+    navigate(`/chat/${servico.id}/${user.id}`);
+  }
+
+  const servicosFiltrados = servicos.filter(s => {
+    if (filtroEsp !== "Todas" && !s.especialidade?.toLowerCase().includes(filtroEsp.toLowerCase())) {
+      return false;
+    }
+    if (filtroCidade.trim() && !s.cidade?.toLowerCase().includes(filtroCidade.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
 
   return (
-    <PageLayout title="Publicações" subtitle="Serviços disponíveis na sua região">
+    <PageLayout title="Serviços disponíveis" subtitle="Encontre oportunidades na sua área">
+      <Toast />
 
-      {/* ── Banner boas-vindas ── */}
-      <div
-        className="wm-animate-fadeUp"
-        style={{
-          background:    "linear-gradient(135deg, var(--clr-navy-deep) 0%, var(--clr-blue) 100%)",
-          borderRadius:  "var(--r-xl)",
-          padding:       "var(--sp-6) var(--sp-8)",
-          color:         "#fff",
-          display:       "flex",
-          alignItems:    "center",
-          justifyContent:"space-between",
-          flexWrap:      "wrap",
-          gap:           "var(--sp-4)",
-          marginBottom:  "var(--sp-6)",
-        }}
-      >
-        <div>
-          {/* Saudação — emoji 👷 removido, padrão CEL */}
-          <p style={{
-            fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 600,
-            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "var(--sp-1)",
-          }}>
-            Olá, {primeiroNome}
-          </p>
-
-          <h2 style={{
-            fontFamily: "var(--font-display)",
-            fontSize:   "clamp(18px, 2.5vw, 26px)",
-            lineHeight: 1.2,
-          }}>
-            {publicacoes.length > 0
-              ? `${publicacoes.length} ${publicacoes.length === 1 ? "serviço disponível" : "serviços disponíveis"}`
-              : "Serviços disponíveis"}
-          </h2>
+      {/* Filtros */}
+      <div className="wm-filters">
+        <div className="wm-filters__chips">
+          {ESPECIALIDADES.map(esp => (
+            <button
+              key={esp}
+              className={`wm-chip${filtroEsp === esp ? " wm-chip--active" : ""}`}
+              onClick={() => setFiltroEsp(esp)}
+            >
+              {esp}
+            </button>
+          ))}
         </div>
-
-        {/* Botões de ação — SVG sem emojis 📋 👤 */}
-        <div style={{ display: "flex", gap: "var(--sp-3)" }}>
-          <Btn variant="secondary" size="sm" onClick={() => navigate("/meus-servicos")}>
-            <IcoClipboard />
-            Meus serviços
-          </Btn>
-          <Btn variant="accent" size="sm" onClick={() => navigate("/perfil-profissional")}>
-            <IcoUser />
-            Meu perfil
-          </Btn>
-        </div>
+        <input
+          className="wm-input wm-filters__city"
+          placeholder="Filtrar por cidade..."
+          value={filtroCidade}
+          onChange={e => setFiltroCidade(e.target.value)}
+        />
       </div>
 
-      {/* ── Loading — Spinner centralizado ── */}
-      {loading && <Spinner size="md" center />}
+      {/* Lista */}
+      {carregando ? (
+        <div className="wm-empty-state">Carregando serviços...</div>
+      ) : servicosFiltrados.length === 0 ? (
+        <div className="wm-empty-state">
+          Nenhum serviço encontrado com esses filtros.
+        </div>
+      ) : (
+        <div className="wm-card-grid">
+          {servicosFiltrados.map(servico => {
+            const jaCandidatou = candidatados.has(servico.id);
+            const emEnvio      = enviando === servico.id;
+            const podeCandidatar = servico.status === "PUBLICADO" && !jaCandidatou;
+            const podeChat       = ["NEGOCIANDO","CONTRATADO","ANDAMENTO"].includes(servico.status)
+                                   && servico.profissionalId === user.id;
 
-      {/* ── Erro ── */}
-      {!loading && erro && (
-        <Card>
-          <CardBody>
-            <p style={{ color: "var(--clr-danger)", fontWeight: 600 }}>{erro}</p>
-          </CardBody>
-        </Card>
-      )}
-
-      {/* ── Estado vazio — icon SVG em vez de emoji 🔍 ── */}
-      {!loading && !erro && publicacoes.length === 0 && (
-        <EmptyState
-          icon={<IcoSearch />}
-          title="Nenhuma publicação disponível"
-          description="Não há serviços publicados no momento. Volte em breve."
-        />
-      )}
-
-      {/* ── Feed de publicações ── */}
-      {!loading && !erro && publicacoes.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-          {publicacoes.map((pub, i) => (
-            <div
-              key={pub.id}
-              className={`wm-animate-fadeUp wm-delay-${Math.min(i + 1, 5)}`}
-            >
-              <Card>
-                <CardBody>
-
-                  {/* ── Cabeçalho do card ── */}
-                  <div style={{
-                    display: "flex", justifyContent: "space-between",
-                    alignItems: "flex-start", flexWrap: "wrap",
-                    gap: "var(--sp-3)", marginBottom: "var(--sp-4)",
-                  }}>
-                    <div style={{ flex: 1 }}>
-
-                      {/* Título + badge de urgência */}
-                      <div style={{
-                        display: "flex", alignItems: "center",
-                        gap: "var(--sp-2)", flexWrap: "wrap",
-                        marginBottom: "var(--sp-2)",
-                      }}>
-                        <h3 style={{ fontWeight: 700, color: "var(--clr-navy)", fontSize: 16 }}>
-                          {pub.titulo}
-                        </h3>
-                        <Badge variant={URGENCIA_BADGE[pub.urgencia] || "neutral"}>
-                          {pub.urgencia || "NORMAL"}
-                        </Badge>
-                      </div>
-
-                      {/* Especialidade */}
-                      <p style={{ fontSize: 14, color: "var(--clr-text-mid)", marginBottom: "var(--sp-1)" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <IcoWrench /> {pub.especialidade}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* ── Metadados — SVG substituindo emojis 📍 🕐 📌 ── */}
-                  <div style={{
-                    display: "flex", gap: "var(--sp-5)", flexWrap: "wrap",
-                    marginBottom: "var(--sp-4)",
-                  }}>
-                    {/* Localização — SVG MapPin */}
-                    <span style={metaStyle}>
-                      <IcoMapPin />
-                      {pub.cidade} — {pub.estado}
-                    </span>
-
-                    {/* Data — SVG Clock */}
-                    <span style={metaStyle}>
-                      <IcoClock />
-                      {fmtData(pub.criadoEm || pub.dataCriacao)}
-                    </span>
-
-                    {/* Status — SVG Tag */}
-                    <span style={metaStyle}>
-                      <IcoTag />
-                      {pub.status}
+            return (
+              <Card key={servico.id}>
+                <div className="wm-service-card">
+                  <div className="wm-service-card__header">
+                    <h3 className="wm-service-card__title">{servico.titulo}</h3>
+                    <span className={`wm-badge ${STATUS_CLASS[servico.status] ?? "wm-badge--gray"}`}>
+                      {STATUS_LABEL[servico.status] ?? servico.status}
                     </span>
                   </div>
 
-                  {/* Descrição (se existir) */}
-                  {pub.descricao && (
-                    <p style={{
-                      fontSize: 14, color: "var(--clr-text-mid)",
-                      lineHeight: 1.6, marginBottom: "var(--sp-4)",
-                      borderLeft: "3px solid var(--clr-border)",
-                      paddingLeft: "var(--sp-3)",
-                    }}>
-                      {pub.descricao}
+                  <div className="wm-service-card__meta">
+                    <span className="wm-service-card__meta-item">
+                      <IconBriefcase /> {servico.especialidade}
+                    </span>
+                    {servico.cidade && (
+                      <span className="wm-service-card__meta-item">
+                        <IconMapPin /> {servico.cidade}{servico.estado ? ` — ${servico.estado}` : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  {servico.descricao && (
+                    <p className="wm-service-card__desc">
+                      {servico.descricao.length > 140
+                        ? servico.descricao.slice(0, 140) + "..."
+                        : servico.descricao}
                     </p>
                   )}
 
-                  {/* ── Botão candidatar — SVG Send, sem emoji ✋ ── */}
-                  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                    <Btn
-                      variant="primary"
-                      size="sm"
-                      disabled={candidatando === pub.id}
-                      onClick={() => handleCandidatar(pub.id)}
-                    >
-                      {candidatando === pub.id
-                        ? "Enviando..."
-                        : <><IcoSend /> Candidatar-se</>
-                      }
-                    </Btn>
-                  </div>
+                  <div className="wm-service-card__actions">
+                    {podeCandidatar && (
+                      <Btn
+                        size="sm"
+                        onClick={() => handleCandidatar(servico)}
+                        disabled={emEnvio}
+                      >
+                        {emEnvio ? "Enviando..." : "Candidatar-se"}
+                      </Btn>
+                    )}
 
-                </CardBody>
+                    {jaCandidatou && servico.status === "PUBLICADO" && (
+                      <span className="wm-text-muted" style={{ fontSize: 14 }}>
+                        ✓ Candidatura enviada
+                      </span>
+                    )}
+
+                    {podeChat && (
+                      <Btn
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleChat(servico)}
+                      >
+                        <IconMessageCircle /> Chat
+                      </Btn>
+                    )}
+                  </div>
+                </div>
               </Card>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
-
     </PageLayout>
   );
 }

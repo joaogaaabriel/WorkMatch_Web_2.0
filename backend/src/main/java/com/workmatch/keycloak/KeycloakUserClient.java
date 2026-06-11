@@ -7,12 +7,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class KeycloakUserClient {
 
-    private final WebClient webClient;
+    private final WebClient          webClient;
     private final KeycloakProperties properties;
     private final KeycloakTokenClient tokenClient;
 
@@ -76,10 +77,33 @@ public class KeycloakUserClient {
                     .retrieve()
                     .toBodilessEntity()
                     .block();
-            // SEC-04 corrigido — System.out.println("Senha recebida: " + senha) removido
 
         } catch (WebClientResponseException ex) {
             throw new KeycloakIntegrationException("Erro ao definir senha no Keycloak: " + ex.getResponseBodyAsString());
+        }
+    }
+
+    /*
+     * Dispara o e-mail de recuperação de senha via Keycloak.
+     * Requer que o realm tenha SMTP configurado no painel do Keycloak.
+     * Ação: UPDATE_PASSWORD — o usuário receberá um link para redefinir a senha.
+     */
+    public void solicitarResetSenha(String keycloakId) {
+        String token = tokenClient.getAdminToken();
+
+        try {
+            webClient.put()
+                    .uri(properties.getUsersUrl() + "/" + keycloakId + "/execute-actions-email")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(List.of("UPDATE_PASSWORD"))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+
+        } catch (WebClientResponseException ex) {
+            throw new KeycloakIntegrationException(
+                    "Erro ao solicitar reset de senha no Keycloak: " + ex.getResponseBodyAsString());
         }
     }
 
